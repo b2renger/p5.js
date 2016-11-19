@@ -1,5 +1,5 @@
 /**
- * @module Input
+ * @module IO
  * @submodule Time & Date
  * @for p5
  * @requires core
@@ -18,10 +18,14 @@ var p5 = require('../core/core');
  * @example
  * <div>
  * <code>
- * var day = day();
- * text("Current day: \n"+day, 5, 50);
+ * var d = day();
+ * text("Current day: \n" + d, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * Current day is displayed
+ *
  */
 p5.prototype.day = function() {
   return new Date().getDate();
@@ -36,10 +40,14 @@ p5.prototype.day = function() {
  * @example
  * <div>
  * <code>
- * var hour = hour();
- * text("Current hour:\n"+hour, 5, 50);
+ * var h = hour();
+ * text("Current hour:\n" + h, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * Current hour is displayed
+ *
  */
 p5.prototype.hour = function() {
   return new Date().getHours();
@@ -54,10 +62,14 @@ p5.prototype.hour = function() {
  * @example
  * <div>
  * <code>
- * var minute = minute();
- * text("Current minute: \n:"+minute, 5, 50);
+ * var m = minute();
+ * text("Current minute: \n" + m, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * Current minute is displayed
+ *
  */
 p5.prototype.minute = function() {
   return new Date().getMinutes();
@@ -74,9 +86,13 @@ p5.prototype.minute = function() {
  * <div>
  * <code>
  * var millisecond = millis();
- * text("Milliseconds \nrunning: "+millisecond, 5, 50);
+ * text("Milliseconds \nrunning: \n" + millisecond, 5, 40);
  * </code>
  * </div>
+ *
+ * @alt
+ * number of milliseconds since program has started displayed
+ *
  */
 p5.prototype.millis = function() {
   return window.performance.now();
@@ -91,10 +107,14 @@ p5.prototype.millis = function() {
  * @example
  * <div>
  * <code>
- * var month = month();
- * text("Current month: \n"+month, 5, 50);
+ * var m = month();
+ * text("Current month: \n" + m, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * Current month is displayed
+ *
  */
 p5.prototype.month = function() {
   return new Date().getMonth() + 1; //January is 0!
@@ -109,10 +129,14 @@ p5.prototype.month = function() {
  * @example
  * <div>
  * <code>
- * var second = second();
- * text("Current second: \n" +second, 5, 50);
+ * var s = second();
+ * text("Current second: \n" + s, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * Current second is displayed
+ *
  */
 p5.prototype.second = function() {
   return new Date().getSeconds();
@@ -127,10 +151,14 @@ p5.prototype.second = function() {
  * @example
  * <div>
  * <code>
- * var year = year();
- * text("Current year: \n" +year, 5, 50);
+ * var y = year();
+ * text("Current year: \n" + y, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * Current year is displayed
+ *
  */
 p5.prototype.year = function() {
   return new Date().getFullYear();

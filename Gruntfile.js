@@ -5,16 +5,26 @@
  *
  *  There are three main tasks:
  *
- *  grunt       - This is the default task, which builds the code, tests it
- *                using both jslint and mocha, and then minifies it.
+ *  grunt             - This is the default task, which builds the code, tests it
+ *                      using both jslint and mocha, and then minifies it.
  *
- *  grunt yui   - This will build the inline documentation for p5.js.
+ *  grunt yui         - This will build the inline documentation for p5.js.
+ *                      The generated documentation is assumed to be
+ *                      served from the /reference/ folder of the p5js
+ *                      website (https://github.com/processing/p5.js-website).
  *
- *  grunt test  - This rebuilds the source and runs the automated tests on
- *                both the minified and unminified code. If you need to debug
- *                a test suite in a browser, `grunt test --keepalive` will
- *                start the connect server and leave it running; the tests
- *                can then be opened at localhost:9001/test/test.html
+ *  grunt yui:dev     - This will build the inline documentation but linking to
+ *                      remote JS/CSS and assets so pages look correct in local
+ *                      testing. The generated documentation is assumed
+ *                      to be served from a development web server running
+ *                      at the root of the repository. "grunt yui" should
+ *                      be run to build docs ready for production.
+ *
+ *  grunt test        - This rebuilds the source and runs the automated tests on
+ *                     both the minified and unminified code. If you need to debug
+ *                     a test suite in a browser, `grunt test --keepalive` will
+ *                     start the connect server and leave it running; the tests
+ *                     can then be opened at localhost:9001/test/test.html
  *
  *  Note: `grunt test:nobuild` will skip the build step when running the tests,
  *  and only runs the test files themselves through the linter: this can save
@@ -30,9 +40,41 @@
  *                      every file change, but does not rebuild the docs.
  *                      It's faster than the default watch.
  *
+ *  grunt watch:quick - This watches the source for changes and rebuilds
+ *                      p5.js on every file change, but does not rebuild
+ *                      docs, and does not perform linting, minification,
+ *                      or run tests. It's faster than watch:main.
+ *
  *  grunt update_json - This automates updating the bower file
  *                      to match the package.json
  */
+
+function getYuidocOptions() {
+  var BASE_YUIDOC_OPTIONS = {
+    name: '<%= pkg.name %>',
+    description: '<%= pkg.description %>',
+    version: '<%= pkg.version %>',
+    url: '<%= pkg.homepage %>',
+    options: {
+      paths: ['src/', 'lib/addons/'],
+      themedir: 'docs/yuidoc-p5-theme/',
+      helpers: [],
+      preprocessor: './docs/preprocessor.js',
+      outdir: 'docs/reference/'
+      //, quiet: false
+    }
+  };
+
+  var o = {
+    prod: JSON.parse(JSON.stringify(BASE_YUIDOC_OPTIONS)),
+    dev: JSON.parse(JSON.stringify(BASE_YUIDOC_OPTIONS))
+  };
+
+  o.prod.options.helpers.push('docs/yuidoc-p5-theme/helpers/helpers_prod.js');
+  o.dev.options.helpers.push('docs/yuidoc-p5-theme/helpers/helpers_dev.js');
+
+  return o;
+}
 
 module.exports = function(grunt) {
 
@@ -46,7 +88,6 @@ module.exports = function(grunt) {
     keepalive = true;
   }
 
-
   grunt.initConfig({
 
     // read in the package, used for knowing the current version, et al.
@@ -58,7 +99,10 @@ module.exports = function(grunt) {
         reporter: require('jscs-stylish').path
       },
       build: {
-        src: ['Gruntfile.js']
+        src: [
+          'Gruntfile.js',
+          'build/**/*.js'
+        ]
       },
       source: {
         src: [
@@ -77,7 +121,10 @@ module.exports = function(grunt) {
         options: {
           jshintrc: '.jshintrc'
         },
-        src: ['Gruntfile.js']
+        src: [
+          'Gruntfile.js',
+          'build/**/*.js'
+        ]
       },
       source: {
         options: {
@@ -99,6 +146,13 @@ module.exports = function(grunt) {
     // code touches files within the theme, so it will also recompile the
     // documentation.
     watch: {
+      quick: {
+        files: ['src/**/*.js','src/**/*.frag','src/**/*.vert'],
+        tasks: ['browserify'],
+        options: {
+          livereload: true
+        }
+      },
       // Watch the codebase for changes
       main: {
         files: ['src/**/*.js'],
@@ -123,13 +177,31 @@ module.exports = function(grunt) {
       },
       // Watch the codebase for doc updates
       yui:{
-        files:['src/**/*.js'],
+        files:['src/**/*.js', 'lib/addons/*.js'],
         task:['yuidoc']
+      }
+    },
+
+    // Set up node-side (non-browser) mocha tests.
+    mochaTest: {
+      test: {
+        src: ['test/node/**/*.js']
       }
     },
 
     // Set up the mocha task, used for running the automated tests.
     mocha: {
+      yui: {
+        options: {
+          urls: [
+            'http://localhost:9001/test/test-reference.html'
+          ],
+          reporter: reporter,
+          run: false,
+          log: true,
+          logErrors: true
+        }
+      },
       test: {
         options: {
           urls: [
@@ -139,7 +211,8 @@ module.exports = function(grunt) {
           reporter: reporter,
           run: true,
           log: true,
-          logErrors: true
+          logErrors: true,
+          timeout: 5000
         }
       },
     },
@@ -159,21 +232,6 @@ module.exports = function(grunt) {
         dest: 'bower.json', // where to write to
         // the fields to update, as a String Grouping
         fields: 'name version description repository'
-      }
-    },
-
-    // Build p5 into a single, UMD-wrapped file
-    browserify: {
-      p5: {
-        options: {
-          transform: ['brfs'],
-          browserifyOptions: {
-            standalone: 'p5'
-          },
-          banner: '/*! p5.js v<%= pkg.version %> <%= grunt.template.today("mmmm dd, yyyy") %> */'
-        },
-        src: 'src/app.js',
-        dest: 'lib/p5.js'
       }
     },
 
@@ -204,36 +262,38 @@ module.exports = function(grunt) {
     // front of the file.
     uglify: {
       options: {
-        banner: '/*! p5.js v<%= pkg.version %> <%= grunt.template.today("mmmm dd, yyyy") %> */ ',
-        footer: 'p5.prototype._validateParameters = function() {};'+
-        'p5.prototype._friendlyFileLoadError = function() {};'
+        compress: {
+          global_defs: {
+            'IS_MINIFIED': true
+          }
+        },
+        banner: '/*! p5.js v<%= pkg.version %> <%= grunt.template.today("mmmm dd, yyyy") %> */ '
       },
-      build: {
-        src: 'lib/p5.js',
-        dest: 'lib/p5.min.js'
+      dist: {
+        files: {
+          'lib/p5.min.js': 'lib/p5.js',
+          'lib/addons/p5.dom.min.js': 'lib/addons/p5.dom.js'
+        }
       }
     },
 
     // this builds the documentation for the codebase.
-    yuidoc: {
-      compile: {
-        name: '<%= pkg.name %>',
-        description: '<%= pkg.description %>',
-        version: '<%= pkg.version %>',
-        url: '<%= pkg.homepage %>',
-        options: {
-          paths: ['src/', 'lib/addons/'],
-          themedir: 'docs/yuidoc-p5-theme/',
-          outdir: 'docs/reference/'
-        }
-      }
-    },
-    release: {
+    yuidoc: getYuidocOptions(),
+    'release-it': {
       options: {
-        github: {
-          repo: 'processing/p5.js', //put your user/repo here
-          usernameVar: process.env.GITHUB_USERNAME, //ENVIRONMENT VARIABLE that contains Github username
-          passwordVar: process.env.GITHUB_PASSWORD //ENVIRONMENT VARIABLE that contains Github password
+        pkgFiles: ['package.json'],
+        commitMessage: 'release v%s',
+        tagName: '%s',
+        tagAnnotation: 'release v%s',
+        buildCommand: 'grunt',
+        changelogCommand: 'git log --pretty=format:"* %s (%h)" [REV_RANGE]',
+        distRepo: 'git@github.com:lmccart/p5.js-release.git',
+        distStageDir: '.stage',
+        distFiles: ['lib/*.js', 'lib/addons/*.js'],
+        distBase: 'lib/',
+        npm: {
+          publish: false,
+          publishPath: 'lib/'
         }
       }
     },
@@ -256,11 +316,37 @@ module.exports = function(grunt) {
           }
         }
       }
+    },
+    'saucelabs-mocha': {
+      all: {
+        options: {
+          urls: ['http://127.0.0.1:9001/test/test.html'],
+          tunnelTimeout: 5,
+          build: process.env.TRAVIS_JOB_ID,
+          concurrency: 3,
+          browsers: [
+            {browserName: 'chrome'},
+            {browserName: 'firefox', platform: 'Linux', version: '42.0'},
+            {browserName: 'safari'},
+          ],
+          testname: 'p5.js mocha tests',
+          tags: ['master']
+        }
+      }
+    },
+    minjson: {
+      compile: {
+        files: {
+          './docs/reference/data.min.json': './docs/reference/data.json'
+        }
+      }
     }
   });
 
+  // Load task definitions
+  grunt.loadTasks('build/tasks');
+
   // Load the external libraries used.
-  grunt.loadNpmTasks('grunt-browserify');
   grunt.loadNpmTasks('grunt-jscs');
   grunt.loadNpmTasks('grunt-contrib-jshint');
   grunt.loadNpmTasks('grunt-contrib-watch');
@@ -271,12 +357,19 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-uglify');
   grunt.loadNpmTasks('grunt-contrib-connect');
   grunt.loadNpmTasks('grunt-newer');
+  grunt.loadNpmTasks('grunt-release-it');
+  grunt.loadNpmTasks('grunt-saucelabs');
+  grunt.loadNpmTasks('grunt-mocha-test');
+  grunt.loadNpmTasks('grunt-minjson');
 
   // Create the multitasks.
   // TODO: "requirejs" is in here to run the "yuidoc_themes" subtask. Is this needed?
   grunt.registerTask('build', ['browserify', 'uglify', 'requirejs']);
-  grunt.registerTask('test', ['jshint', 'jscs', 'build', 'connect', 'mocha']);
+  grunt.registerTask('test', ['jshint', 'jscs', 'build', 'yuidoc:dev', 'connect', 'mocha', 'mochaTest']);
   grunt.registerTask('test:nobuild', ['jshint:test', 'jscs:test', 'connect', 'mocha']);
-  grunt.registerTask('yui', ['yuidoc']);
+  grunt.registerTask('yui', ['yuidoc:prod', 'minjson']);
+  grunt.registerTask('yui:dev', ['yuidoc:dev', 'minjson']);
+  grunt.registerTask('yui:test', ['yuidoc:dev', 'connect', 'mocha:yui']);
   grunt.registerTask('default', ['test']);
+  grunt.registerTask('saucetest', ['connect', 'saucelabs-mocha']);
 };

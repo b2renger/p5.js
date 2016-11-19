@@ -13,7 +13,6 @@
 
 
 var p5 = require('../core/core');
-var constants = require('../core/constants');
 
 /* global frames:true */// This is not global, but JSHint is not aware that
 // this module is implicitly enclosed with Browserify: this overrides the
@@ -21,14 +20,12 @@ var constants = require('../core/constants');
 // of saved animation frames.
 var frames = [];
 
-p5.prototype._imageMode = constants.CORNER;
-p5.prototype._tint = null;
 
 /**
  * Creates a new p5.Image (the datatype for storing images). This provides a
  * fresh buffer of pixels to play with. Set the size of the buffer with the
  * width and height parameters.
- *
+ * <br><br>
  * .pixels gives access to an array containing the values for all the pixels
  * in the display window.
  * These values are numbers. This array is the size (including an appropriate
@@ -38,9 +35,8 @@ p5.prototype._tint = null;
  * more info. It may also be simpler to use set() or get().
  * <br><br>
  * Before accessing the pixels of an image, the data must loaded with the
- * loadPixels()
- * function. After the array data has been modified, the updatePixels()
- * function must be run to update the changes.
+ * loadPixels() function. After the array data has been modified, the
+ * updatePixels() function must be run to update the changes.
  *
  * @method createImage
  * @param  {Integer} width  width in pixels
@@ -93,13 +89,19 @@ p5.prototype._tint = null;
  * image(img, 17, 17);
  * </code>
  * </div>
+ *
+ * @alt
+ * 66x66 dark turquoise rect in center of canvas.
+ * 2 gradated dark turquoise rects fade left. 1 center 1 bottom right of canvas
+ * no image displayed
+ *
  */
 p5.prototype.createImage = function(width, height) {
   return new p5.Image(width, height);
 };
 
 /**
- *  Save the current canvas as an image. In Safari, will open the
+ *  Save the current canvas as an image. In Safari, this will open the
  *  image in the window and the user must provide their own
  *  filename on save-as. Other browsers will either save the
  *  file immediately, or prompt the user with a dialogue window.
@@ -135,6 +137,12 @@ p5.prototype.createImage = function(width, height) {
  *  saveCanvas('myCanvas');
  *  saveCanvas();
  *  </code></div>
+ *
+ * @alt
+ * no image displayed
+ * no image displayed
+ * no image displayed
+ *
  */
 p5.prototype.saveCanvas = function() {
 
@@ -194,18 +202,18 @@ p5.prototype.saveCanvas = function() {
     }
     else {
       switch(extension){
-      case 'png':
-        mimeType = 'image/png';
-        break;
-      case 'jpeg':
-        mimeType = 'image/jpeg';
-        break;
-      case 'jpg':
-        mimeType = 'image/jpeg';
-        break;
-      default:
-        mimeType = 'image/png';
-        break;
+        case 'png':
+          mimeType = 'image/png';
+          break;
+        case 'jpeg':
+          mimeType = 'image/jpeg';
+          break;
+        case 'jpg':
+          mimeType = 'image/jpeg';
+          break;
+        default:
+          mimeType = 'image/png';
+          break;
       }
     }
     var downloadMime = 'image/octet-stream';
@@ -220,16 +228,40 @@ p5.prototype.saveCanvas = function() {
  *  Capture a sequence of frames that can be used to create a movie.
  *  Accepts a callback. For example, you may wish to send the frames
  *  to a server where they can be stored or converted into a movie.
- *  If no callback is provided, the browser will attempt to download
- *  all of the images that have just been created.
+ *  If no callback is provided, the browser will pop up save dialogues in an
+ *  attempt to download all of the images that have just been created. With the
+ *  callback provided the image data isn't saved by default but instead passed
+ *  as an argument to the callback function as an array of objects, with the
+ *  size of array equal to the total number of frames.
  *
  *  @method saveFrames
- *  @param  {[type]}   filename  [description]
- *  @param  {[type]}   extension [description]
- *  @param  {[type]}   _duration [description]
- *  @param  {[type]}   _fps      [description]
- *  @param  {[Function]} callback  [description]
- *  @return {[type]}             [description]
+ *  @param  {String}   filename
+ *  @param  {String}   extension 'jpg' or 'png'
+ *  @param  {Number}   duration  Duration in seconds to save the frames for.
+ *  @param  {Number}   framerate  Framerate to save the frames in.
+ *  @param  {Function} [callback] A callback function that will be executed
+                                  to handle the image data. This function
+                                  should accept an array as argument. The
+                                  array will contain the specified number of
+                                  frames of objects. Each object has three
+                                  properties: imageData - an
+                                  image/octet-stream, filename and extension.
+ *  @example
+ *  <div><code>
+ *  function draw() {
+ *    background(mouseX);
+ *  }
+ *
+ *  function mousePressed() {
+ *    saveFrames("out", "png", 1, 25, function(data){
+ *      print(data);
+ *    });
+ *  }
+ *  </code></div>
+ *
+ * @alt
+ * canvas background goes from light to dark with mouse x.
+ *
  */
 p5.prototype.saveFrames = function(fName, ext, _duration, _fps, callback) {
   var duration = _duration || 3;
@@ -275,18 +307,18 @@ p5.prototype._makeFrame = function(filename, extension, _cnv) {
   }
   else {
     switch(extension.toLowerCase()){
-    case 'png':
-      mimeType = 'image/png';
-      break;
-    case 'jpeg':
-      mimeType = 'image/jpeg';
-      break;
-    case 'jpg':
-      mimeType = 'image/jpeg';
-      break;
-    default:
-      mimeType = 'image/png';
-      break;
+      case 'png':
+        mimeType = 'image/png';
+        break;
+      case 'jpeg':
+        mimeType = 'image/jpeg';
+        break;
+      case 'jpg':
+        mimeType = 'image/jpeg';
+        break;
+      default:
+        mimeType = 'image/png';
+        break;
     }
   }
   var downloadMime = 'image/octet-stream';

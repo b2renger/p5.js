@@ -12,6 +12,7 @@ require('./image/p5.Image');
 require('./math/p5.Vector');
 require('./io/p5.TableRow');
 require('./io/p5.Table');
+require('./io/p5.XML');
 
 require('./color/creating_reading');
 require('./color/setting');
@@ -45,15 +46,18 @@ require('./core/transform');
 require('./typography/attributes');
 require('./typography/loading_displaying');
 
-require('./3d/p5.Renderer3D');
-require('./3d/p5.Geometry3D');
-require('./3d/retainedMode3D');
-require('./3d/immediateMode3D');
-require('./3d/3d_primitives');
-require('./3d/p5.Matrix');
-require('./3d/material');
-require('./3d/shader');
-require('./3d/interaction');
+require('./webgl/p5.RendererGL');
+require('./webgl/p5.Geometry');
+require('./webgl/p5.RendererGL.Retained');
+require('./webgl/p5.RendererGL.Immediate');
+require('./webgl/primitives');
+require('./webgl/loading');
+require('./webgl/p5.Matrix');
+require('./webgl/material');
+require('./webgl/light');
+require('./webgl/shader');
+require('./webgl/camera');
+require('./webgl/interaction');
 
 /**
  * _globalInit
@@ -70,8 +74,9 @@ var _globalInit = function() {
   if (!window.PHANTOMJS && !window.mocha) {
     // If there is a setup or draw function on the window
     // then instantiate p5 in "global" mode
-    if((window.setup && typeof window.setup === 'function') ||
-      (window.draw && typeof window.draw === 'function')) {
+    if(((window.setup && typeof window.setup === 'function') ||
+       (window.draw && typeof window.draw === 'function')) &&
+       !p5.instance) {
       new p5();
     }
   }

@@ -6,7 +6,7 @@
 'use strict';
 
 var p5 = require('./core');
-var doFriendlyWelcome = true;
+var doFriendlyWelcome = false; // TEMP until we get it all working LM
 
 // -- Borrowed from jQuery 1.11.3 --
 var class2type = {};
@@ -83,27 +83,30 @@ function report(message, func, color) {
   } else if (getType(color) === 'number') { // Type to color
     color = typeColors[color];
   }
-  if (func.substring(0,4) === 'load'){
-    console.log(
-      '%c> p5.js says: '+message+'%c'+
-      '[https://github.com/processing/p5.js/wiki/Local-server]',
-      'background-color:' + color + ';color:#FFF;',
-      'background-color:transparent;color:' + color +';',
-      'background-color:' + color + ';color:#FFF;',
-      'background-color:transparent;color:' + color +';'
-    );
-  }
-  else{
-    console.log(
-      '%c> p5.js says: '+message+'%c [http://p5js.org/reference/#p5/'+func+
-      ']', 'background-color:' + color + ';color:#FFF;',
-      'background-color:transparent;color:' + color +';'
-    );
-  }
+  // LM TEMP commenting this out until we get the whole system working
+  // if (func.substring(0,4) === 'load'){
+  //   console.log(
+  //     '%c> p5.js says: '+message+'%c'+
+  //     '[https://github.com/processing/p5.js/wiki/Local-server]',
+  //     'background-color:' + color + ';color:#FFF;',
+  //     'background-color:transparent;color:' + color +';',
+  //     'background-color:' + color + ';color:#FFF;',
+  //     'background-color:transparent;color:' + color +';'
+  //   );
+  // }
+  // else{
+  //   console.log(
+  //     '%c> p5.js says: '+message+'%c [http://p5js.org/reference/#p5/'+func+
+  //     ']', 'background-color:' + color + ';color:#FFF;',
+  //     'background-color:transparent;color:' + color +';'
+  //   );
+  // }
 }
 
 /**
  * Validate all the parameters of a function for number and type
+ * NOTE THIS FUNCTION IS TEMPORARILY DISABLED UNTIL FURTHER WORK
+ * AND UPDATES ARE IMPLEMENTED. -LMCCART
  *
  * @param  {String} func  name of function we're checking
  * @param  {Array}  args  pass of the JS default arguments array
@@ -119,12 +122,9 @@ p5.prototype._validateParameters = function(func, args, types) {
   if (!isArray(types[0])) {
     types = [types];
   }
-  /**
-   * Check number of parameters
-   *
-   * Example: "You wrote ellipse(X,X,X). ellipse was expecting 4
-   *           parameters. Try ellipse(X,X,X,X)."
-   */
+  // Check number of parameters
+  // Example: "You wrote ellipse(X,X,X). ellipse was expecting 4
+  //          parameters. Try ellipse(X,X,X,X)."
   var diff = Math.abs(args.length-types[0].length);
   var message, tindex = 0;
   for (var i=1, len=types.length; i<len; i++) {
@@ -139,13 +139,13 @@ p5.prototype._validateParameters = function(func, args, types) {
     message = 'You wrote ' + func + '(';
     // Concat an appropriate number of placeholders for call
     if (args.length > 0) {
-      message += symbol + (','+symbol).repeat(args.length-1);
+      message += symbol + Array(args.length).join(',' + symbol);
     }
     message += '). ' + func + ' was expecting ' + types[tindex].length +
       ' parameters. Try ' + func + '(';
     // Concat an appropriate number of placeholders for definition
     if (types[tindex].length > 0) {
-      message += symbol + (','+symbol).repeat(types[tindex].length-1);
+      message += symbol + Array(types[tindex].length).join(',' + symbol);
     }
     message += ').';
     // If multiple definitions
@@ -155,13 +155,10 @@ p5.prototype._validateParameters = function(func, args, types) {
     }
     report(message, func, PARAM_COUNT);
   }
-  /**
-   * Type checking
-   *
-   * Example: "It looks like ellipse received an empty variable in spot #2."
-   * Example: "ellipse was expecting a number for parameter #1,
-   *           received "foo" instead."
-   */
+  // Type checking
+  // Example: "It looks like ellipse received an empty variable in spot #2."
+  // Example: "ellipse was expecting a number for parameter #1,
+  //           received "foo" instead."
   for (var format=0; format<types.length; format++) {
     for (var p=0; p < types[format].length && p < args.length; p++) {
       var defType = types[format][p];
@@ -188,6 +185,14 @@ p5.prototype._validateParameters = function(func, args, types) {
     }
   }
 };
+/*
+ * NOTE THIS FUNCTION IS TEMPORARILY DISABLED UNTIL FURTHER WORK
+ * AND UPDATES ARE IMPLEMENTED. -LMCCART
+ */
+p5.prototype._validateParameters = function() {
+  return true;
+};
+
 var errorCases = {
   '0': {
     fileType: 'image',
@@ -205,7 +210,12 @@ var errorCases = {
   '3': {
     fileType: 'text file',
     method: 'loadStrings'
-  }
+  },
+  '4': {
+    fileType: 'font',
+    method: 'loadFont',
+    message: ' hosting the font online,'
+  },
 };
 p5._friendlyFileLoadError = function (errorType, filePath) {
   var errorInfo = errorCases[ errorType ];
@@ -242,22 +252,139 @@ function friendlyWelcome() {
  */
 /* function testColors() {
   var str = 'A box of biscuits, a box of mixed biscuits and a biscuit mixer';
-  report(str, 'println', '#ED225D'); // p5.js magenta
-  report(str, 'println', '#2D7BB6'); // p5.js blue
-  report(str, 'println', '#EE9900'); // p5.js orange
-  report(str, 'println', '#A67F59'); // p5.js light brown
-  report(str, 'println', '#704F21'); // p5.js gold
-  report(str, 'println', '#1CC581'); // auto cyan
-  report(str, 'println', '#FF6625'); // auto orange
-  report(str, 'println', '#79EB22'); // auto green
-  report(str, 'println', '#B40033'); // p5.js darkened magenta
-  report(str, 'println', '#084B7F'); // p5.js darkened blue
-  report(str, 'println', '#945F00'); // p5.js darkened orange
-  report(str, 'println', '#6B441D'); // p5.js darkened brown
-  report(str, 'println', '#2E1B00'); // p5.js darkened gold
-  report(str, 'println', '#008851'); // auto dark cyan
-  report(str, 'println', '#C83C00'); // auto dark orange
-  report(str, 'println', '#4DB200'); // auto dark green
+  report(str, 'print', '#ED225D'); // p5.js magenta
+  report(str, 'print', '#2D7BB6'); // p5.js blue
+  report(str, 'print', '#EE9900'); // p5.js orange
+  report(str, 'print', '#A67F59'); // p5.js light brown
+  report(str, 'print', '#704F21'); // p5.js gold
+  report(str, 'print', '#1CC581'); // auto cyan
+  report(str, 'print', '#FF6625'); // auto orange
+  report(str, 'print', '#79EB22'); // auto green
+  report(str, 'print', '#B40033'); // p5.js darkened magenta
+  report(str, 'print', '#084B7F'); // p5.js darkened blue
+  report(str, 'print', '#945F00'); // p5.js darkened orange
+  report(str, 'print', '#6B441D'); // p5.js darkened brown
+  report(str, 'print', '#2E1B00'); // p5.js darkened gold
+  report(str, 'print', '#008851'); // auto dark cyan
+  report(str, 'print', '#C83C00'); // auto dark orange
+  report(str, 'print', '#4DB200'); // auto dark green
 } */
+
+// This is a lazily-defined list of p5 symbols that may be
+// misused by beginners at top-level code, outside of setup/draw. We'd like
+// to detect these errors and help the user by suggesting they move them
+// into setup/draw.
+//
+// For more details, see https://github.com/processing/p5.js/issues/1121.
+var misusedAtTopLevelCode = null;
+var FAQ_URL = 'https://github.com/processing/p5.js/wiki/' +
+              'Frequently-Asked-Questions' +
+              '#why-cant-i-assign-variables-using-p5-functions-and-' +
+              'variables-before-setup';
+
+function defineMisusedAtTopLevelCode() {
+  var uniqueNamesFound = {};
+
+  var getSymbols = function(obj) {
+    return Object.getOwnPropertyNames(obj).filter(function(name) {
+      if (name[0] === '_') {
+        return false;
+      }
+      if (name in uniqueNamesFound) {
+        return false;
+      }
+
+      uniqueNamesFound[name] = true;
+
+      return true;
+    }).map(function(name) {
+      var type;
+
+      if (typeof(obj[name]) === 'function') {
+        type = 'function';
+      } else if (name === name.toUpperCase()) {
+        type = 'constant';
+      } else {
+        type = 'variable';
+      }
+
+      return {name: name, type: type};
+    });
+  };
+
+  misusedAtTopLevelCode = [].concat(
+    getSymbols(p5.prototype),
+    // At present, p5 only adds its constants to p5.prototype during
+    // construction, which may not have happened at the time a
+    // ReferenceError is thrown, so we'll manually add them to our list.
+    getSymbols(require('./constants'))
+  );
+
+  // This will ultimately ensure that we report the most specific error
+  // possible to the user, e.g. advising them about HALF_PI instead of PI
+  // when their code misuses the former.
+  misusedAtTopLevelCode.sort(function(a, b) {
+    return b.name.length - a.name.length;
+  });
+}
+
+function helpForMisusedAtTopLevelCode(e, log) {
+  if (!log) {
+    log = console.log.bind(console);
+  }
+
+  if (!misusedAtTopLevelCode) {
+    defineMisusedAtTopLevelCode();
+  }
+
+  // If we find that we're logging lots of false positives, we can
+  // uncomment the following code to avoid displaying anything if the
+  // user's code isn't likely to be using p5's global mode. (Note that
+  // setup/draw are more likely to be defined due to JS function hoisting.)
+  //
+  //if (!('setup' in window || 'draw' in window)) {
+  //  return;
+  //}
+
+  misusedAtTopLevelCode.some(function(symbol) {
+    // Note that while just checking for the occurrence of the
+    // symbol name in the error message could result in false positives,
+    // a more rigorous test is difficult because different browsers
+    // log different messages, and the format of those messages may
+    // change over time.
+    //
+    // For example, if the user uses 'PI' in their code, it may result
+    // in any one of the following messages:
+    //
+    //   * 'PI' is undefined                           (Microsoft Edge)
+    //   * ReferenceError: PI is undefined             (Firefox)
+    //   * Uncaught ReferenceError: PI is not defined  (Chrome)
+
+    if (e.message && e.message.match('\\W?'+symbol.name+'\\W') !== null) {
+      log('%cDid you just try to use p5.js\'s ' + symbol.name +
+          (symbol.type === 'function' ? '() ' : ' ') + symbol.type +
+          '? If so, you may want to ' +
+          'move it into your sketch\'s setup() function.\n\n' +
+          'For more details, see: ' + FAQ_URL,
+          'color: #B40033' /* Dark magenta */);
+      return true;
+    }
+  });
+}
+
+// Exposing this primarily for unit testing.
+p5.prototype._helpForMisusedAtTopLevelCode = helpForMisusedAtTopLevelCode;
+
+if (document.readyState !== 'complete') {
+  window.addEventListener('error', helpForMisusedAtTopLevelCode, false);
+
+  // Our job is only to catch ReferenceErrors that are thrown when
+  // global (non-instance mode) p5 APIs are used at the top-level
+  // scope of a file, so we'll unbind our error listener now to make
+  // sure we don't log false positives later.
+  window.addEventListener('load', function() {
+    window.removeEventListener('error', helpForMisusedAtTopLevelCode, false);
+  });
+}
 
 module.exports = p5;

@@ -17,16 +17,17 @@ p5.prototype._frameRate = 0;
 p5.prototype._lastFrameTime = window.performance.now();
 p5.prototype._targetFrameRate = 60;
 
+var _windowPrint = window.print;
+
 
 if (window.console && console.log) {
   /**
    * The print() function writes to the console area of your browser.
    * This function is often helpful for looking at the data a program is
    * producing. This function creates a new line of text for each call to
-   * the function. More than one parameter can be passed into the function by
-   * separating them with commas. Alternatively, individual elements can be
+   * the function. Individual elements can be
    * separated with quotes ("") and joined with the addition operator (+).
-   *
+   * <br><br>
    * While print() is similar to console.log(), it does not directly map to
    * it in order to simulate easier to understand behavior than
    * console.log(). Due to this, it is slower. For fastest results, use
@@ -35,6 +36,14 @@ if (window.console && console.log) {
    * @method print
    * @param {Any} contents any combination of Number, String, Object, Boolean,
    *                       Array to print
+   * @example
+   * <div><code class='norender'>
+   * var x = 10;
+   * print("The value of x is " + x);
+   * // prints "The value of x is 10"
+   * </code></div>
+   * @alt
+   * default grey canvas
    */
   // Converts passed args into a string and then parses that string to
   // simulate synchronous behavior. This is a hack and is gross.
@@ -42,8 +51,15 @@ if (window.console && console.log) {
   // structures, simply console.log() on error.
   p5.prototype.print = function(args) {
     try {
-      var newArgs = JSON.parse(JSON.stringify(args));
-      console.log(newArgs);
+      if (arguments.length === 0) {
+        _windowPrint();
+      }
+      else if (arguments.length > 1) {
+        console.log.apply(console, arguments);
+      } else {
+        var newArgs = JSON.parse(JSON.stringify(args));
+        console.log(newArgs);
+      }
     } catch(err) {
       console.log(args);
     }
@@ -52,7 +68,6 @@ if (window.console && console.log) {
   p5.prototype.print = function() {};
 }
 
-p5.prototype.println = p5.prototype.print;
 
 /**
  * The system variable frameCount contains the number of frames that have
@@ -74,6 +89,10 @@ p5.prototype.println = p5.prototype.print;
  *       text(frameCount, width/2, height/2);
  *     }
  *   </code></div>
+ *
+ * @alt
+ * numbers rapidly counting upward with frame count set to 30.
+ *
  */
 p5.prototype.frameCount = 0;
 
@@ -88,18 +107,22 @@ p5.prototype.frameCount = 0;
  * // To demonstrate, put two windows side by side.
  * // Click on the window that the p5 sketch isn't in!
  * function draw() {
- *   if (focused) {  // or "if (focused === true)"
- *     noStroke();
- *     fill(0, 200, 0);
- *     ellipse(25, 25, 50, 50);
- *   } else {
+ *   background(200);
+ *   noStroke();
+ *   fill(0, 200, 0);
+ *   ellipse(25, 25, 50, 50);
+ *
+ *   if (!focused) {  // or "if (focused === false)"
  *     stroke(200,0,0);
  *     line(0, 0, 100, 100);
  *     line(100, 0, 0, 100);
  *   }
  * }
- *
  * </code></div>
+ *
+ * @alt
+ * green 50x50 ellipse at top left. Red X covers canvas when page focus changes
+ *
  */
 p5.prototype.focused = (document.hasFocus());
 
@@ -129,6 +152,10 @@ p5.prototype.focused = (document.hasFocus());
  *   }
  * }
  * </code></div>
+ *
+ * @alt
+ * horizontal line divides canvas. cursor on left is a cross, right is hand.
+ *
  */
 p5.prototype.cursor = function(type, x, y) {
   var cursor = 'auto';
@@ -164,9 +191,12 @@ p5.prototype.cursor = function(type, x, y) {
  * frame rate will not be achieved. Setting the frame rate within setup() is
  * recommended. The default rate is 60 frames per second. This is the same as
  * setFrameRate(val).
- *
+ * <br><br>
  * Calling frameRate() with no arguments returns the current framerate. This
  * is the same as getFrameRate().
+ * <br><br>
+ * Calling frameRate() with arguments that are not of the type numbers
+ * or are non positive also returns current framerate.
  *
  * @method frameRate
  * @param  {Number} [fps] number of frames to be displayed every second
@@ -176,11 +206,12 @@ p5.prototype.cursor = function(type, x, y) {
  * <div><code>
  * var rectX = 0;
  * var fr = 30; //starting FPS
- * var clr = color(255,0,0);
+ * var clr;
  *
  * function setup() {
  *   background(200);
  *   frameRate(fr); // Attempt to refresh at starting FPS
+ *   clr = color(255,0,0);
  * }
  *
  * function draw() {
@@ -204,9 +235,12 @@ p5.prototype.cursor = function(type, x, y) {
  * }
  * </div></code>
  *
+ * @alt
+ * blue rect moves left to right, followed by red rect moving faster. Loops.
+ *
  */
 p5.prototype.frameRate = function(fps) {
-  if (typeof fps === 'undefined') {
+  if (typeof fps !== 'number' || fps <= 0) {
     return this._frameRate;
   } else {
     this._setProperty('_targetFrameRate', fps);
@@ -253,6 +287,11 @@ p5.prototype.setFrameRate = function(fps) {
  *   ellipse(mouseX, mouseY, 10, 10);
  * }
  * </code></div>
+ *
+ *
+ * @alt
+ * cursor becomes 10x 10 white ellipse the moves with mouse x and y.
+ *
  */
 p5.prototype.noCursor = function() {
   this._curElement.elt.style.cursor = 'none';
@@ -268,6 +307,10 @@ p5.prototype.noCursor = function() {
  * <div class="norender"><code>
  * createCanvas(displayWidth, displayHeight);
  * </code></div>
+ *
+ * @alt
+ * cursor becomes 10x 10 white ellipse the moves with mouse x and y.
+ *
  */
 p5.prototype.displayWidth = screen.width;
 
@@ -280,6 +323,10 @@ p5.prototype.displayWidth = screen.width;
  * <div class="norender"><code>
  * createCanvas(displayWidth, displayHeight);
  * </code></div>
+ *
+ * @alt
+ * no display.
+ *
  */
 p5.prototype.displayHeight = screen.height;
 
@@ -292,8 +339,12 @@ p5.prototype.displayHeight = screen.height;
  * <div class="norender"><code>
  * createCanvas(windowWidth, windowHeight);
  * </code></div>
+ *
+ * @alt
+ * no display.
+ *
  */
-p5.prototype.windowWidth = window.innerWidth;
+p5.prototype.windowWidth = getWindowWidth();
 /**
  * System variable that stores the height of the inner window, it maps to
  * window.innerHeight.
@@ -303,15 +354,18 @@ p5.prototype.windowWidth = window.innerWidth;
  * <div class="norender"><code>
  * createCanvas(windowWidth, windowHeight);
  * </code></div>
- */
-p5.prototype.windowHeight = window.innerHeight;
+*@alt
+ * no display.
+ *
+*/
+p5.prototype.windowHeight = getWindowHeight();
 
 /**
  * The windowResized() function is called once every time the browser window
  * is resized. This is a good place to resize the canvas or do any other
- * adjustements to accomodate the new window size.
+ * adjustments to accommodate the new window size.
  *
- * @property windowResized
+ * @method windowResized
  * @example
  * <div class="norender"><code>
  * function setup() {
@@ -326,10 +380,12 @@ p5.prototype.windowHeight = window.innerHeight;
  *   resizeCanvas(windowWidth, windowHeight);
  * }
  * </code></div>
+ * @alt
+ * no display.
  */
 p5.prototype._onresize = function(e){
-  this._setProperty('windowWidth', window.innerWidth);
-  this._setProperty('windowHeight', window.innerHeight);
+  this._setProperty('windowWidth', getWindowWidth());
+  this._setProperty('windowHeight', getWindowHeight());
   var context = this._isGlobal ? window : this;
   var executeDefault;
   if (typeof context.windowResized === 'function') {
@@ -339,6 +395,20 @@ p5.prototype._onresize = function(e){
     }
   }
 };
+
+function getWindowWidth() {
+  return window.innerWidth ||
+         document.documentElement && document.documentElement.clientWidth ||
+         document.body && document.body.clientWidth ||
+         0;
+}
+
+function getWindowHeight() {
+  return window.innerHeight ||
+         document.documentElement && document.documentElement.clientHeight ||
+         document.body && document.body.clientHeight ||
+         0;
+}
 
 /**
  * System variable that stores the width of the drawing canvas. This value
@@ -370,7 +440,8 @@ p5.prototype.height = 0;
  * below.
  *
  * @method fullscreen
- * @param  {Boolean} [val] whether the sketch should be fullscreened or not
+ * @param  {Boolean} [val] whether the sketch should be in fullscreen mode
+ * or not
  * @return {Boolean} current fullscreen state
  * @example
  * <div>
@@ -387,6 +458,10 @@ p5.prototype.height = 0;
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * no display.
+ *
  */
 p5.prototype.fullscreen = function(val) {
   // no arguments, return fullscreen or not
@@ -405,18 +480,20 @@ p5.prototype.fullscreen = function(val) {
 };
 
 /**
- * Toggles pixel scaling for high pixel density displays. By default
- * pixel scaling is on, call devicePixelScaling(false) to turn it off.
- * This devicePixelScaling() function must be the first line of code
- * inside setup().
+ * Sets the pixel scaling for high pixel density displays. By default
+ * pixel density is set to match display density, call pixelDensity(1)
+ * to turn this off. Calling pixelDensity() with no arguments returns
+ * the current pixel density of the sketch.
  *
- * @method devicePixelScaling
- * @param  {Boolean|Number} [val] whether or how much the sketch should scale
+ *
+ * @method pixelDensity
+ * @param  {Number} [val] whether or how much the sketch should scale
+ * @returns {Number} current pixel density of the sketch
  * @example
  * <div>
  * <code>
  * function setup() {
- *   devicePixelScaling(false);
+ *   pixelDensity(1);
  *   createCanvas(100, 100);
  *   background(200);
  *   ellipse(width/2, height/2, 50, 50);
@@ -426,26 +503,50 @@ p5.prototype.fullscreen = function(val) {
  * <div>
  * <code>
  * function setup() {
- *   devicePixelScaling(3.0);
+ *   pixelDensity(3.0);
  *   createCanvas(100, 100);
  *   background(200);
  *   ellipse(width/2, height/2, 50, 50);
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * fuzzy 50x50 white ellipse with black outline in center of canvas.
+ * sharp 50x50 white ellipse with black outline in center of canvas.
  */
-p5.prototype.devicePixelScaling = function(val) {
-  if (val) {
-    if (typeof val === 'number') {
-      this.pixelDensity = val;
-    }
-    else {
-      this.pixelDensity = window.devicePixelRatio || 1;
-    }
+p5.prototype.pixelDensity = function(val) {
+  if (typeof val === 'number') {
+    this._pixelDensity = val;
   } else {
-    this.pixelDensity = 1;
+    return this._pixelDensity;
   }
   this.resizeCanvas(this.width, this.height, true);
+};
+
+/**
+ * Returns the pixel density of the current display the sketch is running on.
+ *
+ * @method displayDensity
+ * @returns {Number} current pixel density of the display
+ * @example
+ * <div>
+ * <code>
+ * function setup() {
+ *   var density = displayDensity();
+ *   pixelDensity(density);
+ *   createCanvas(100, 100);
+ *   background(200);
+ *   ellipse(width/2, height/2, 50, 50);
+ * }
+ * </code>
+ * </div>
+ *
+ * @alt
+ * 50x50 white ellipse with black outline in center of canvas.
+ */
+p5.prototype.displayDensity = function() {
+  return window.devicePixelRatio;
 };
 
 function launchFullscreen(element) {
@@ -503,6 +604,10 @@ function exitFullscreen() {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * current url (http://p5js.org/reference/#/p5/getURL) moves right to left.
+ *
  */
 p5.prototype.getURL = function() {
   return location.href;
@@ -520,6 +625,10 @@ p5.prototype.getURL = function() {
  *   }
  * }
  * </code></div>
+ *
+ * @alt
+ *no display
+ *
  */
 p5.prototype.getURLPath = function() {
   return location.pathname.split('/').filter(function(v){return v!=='';});
@@ -541,6 +650,9 @@ p5.prototype.getURLPath = function() {
  * }
  * </code>
  * </div>
+ * @alt
+ * no display.
+ *
  */
 p5.prototype.getURLParams = function() {
   var re = /[?&]([^&=]+)(?:[&=])([^&=]+)/gim;

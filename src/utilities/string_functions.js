@@ -30,6 +30,10 @@ var p5 = require('../core/core');
  * text(message, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * "hello world!" displayed middle left of canvas.
+ *
  */
 p5.prototype.join = function(list, separator) {
   return list.join(separator);
@@ -42,11 +46,11 @@ p5.prototype.join = function(list, separator) {
  * If no groups are specified in the regular expression, but the sequence
  * matches, an array of length 1 (with the matched text as the first element
  * of the array) will be returned.
- *
+ * <br><br>
  * To use the function, first check to see if the result is null. If the
  * result is null, then the sequence did not match at all. If the sequence
  * did match, an array is returned.
- *
+ * <br><br>
  * If there are groups (specified by sets of parentheses) in the regular
  * expression, then the contents of each will be returned in the array.
  * Element [0] of a regular expression match returns the entire matching
@@ -66,6 +70,10 @@ p5.prototype.join = function(list, separator) {
  * text(match, 5, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * "p5js*" displayed middle left of canvas.
+ *
  */
 p5.prototype.match =  function(str, reg) {
   return str.match(reg);
@@ -78,11 +86,11 @@ p5.prototype.match =  function(str, reg) {
  * will be returned. If no groups are specified in the regular expression,
  * but the sequence matches, a two dimensional array is still returned, but
  * the second dimension is only of length one.
- *
+ * <br><br>
  * To use the function, first check to see if the result is null. If the
  * result is null, then the sequence did not match at all. If the sequence
  * did match, a 2D array is returned.
- *
+ * <br><br>
  * If there are groups (specified by sets of parentheses) in the regular
  * expression, then the contents of each will be returned in the array.
  * Assuming a loop with counter variable i, element [i][0] of a regular
@@ -155,6 +163,10 @@ p5.prototype.matchAll = function(str, reg) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * "0011253" top left, "0112.531" mid left, "112.531061" bottom left canvas
+ *
  */
 p5.prototype.nf = function () {
   if (arguments[0] instanceof Array) {
@@ -252,6 +264,10 @@ function doNf() {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * "11,253,106.115" top middle and "1.00,1.00,2.00" displayed bottom mid
+ *
  */
 p5.prototype.nfc = function () {
   if (arguments[0] instanceof Array) {
@@ -323,6 +339,10 @@ function doNfc() {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * "+11253106.11" top middle and "-11253106.11" displayed bottom middle
+ *
  */
 p5.prototype.nfp = function() {
   var nfRes = this.nf.apply(this, arguments);
@@ -376,6 +396,10 @@ function addNfp() {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * "11253106.11" top middle and "-11253106.11" displayed bottom middle
+ *
  */
 p5.prototype.nfs = function() {
   var nfRes = this.nf.apply(this, arguments);
@@ -406,17 +430,21 @@ function addNfs() {
  * @method split
  * @param  {String} value the String to be split
  * @param  {String} delim the String used to separate the data
- * @return {Array}        Array of Strings
+ * @return {Array}  Array of Strings
  * @example
  * <div>
  * <code>
- *var names = "Pat,Xio,Alex"
+ * var names = "Pat,Xio,Alex"
  * var splitString = split(names, ",");
  * text(splitString[0], 5, 30);
  * text(splitString[1], 5, 50);
  * text(splitString[2], 5, 70);
  * </code>
  * </div>
+ *
+ * @alt
+ * "pat" top left, "Xio" mid left and "Alex" displayed bottom left
+ *
  */
 p5.prototype.split = function(str, delim) {
   return str.split(delim);
@@ -426,7 +454,7 @@ p5.prototype.split = function(str, delim) {
  * The splitTokens() function splits a String at one or many character
  * delimiters or "tokens." The delim parameter specifies the character or
  * characters to be used as a boundary.
- *
+ * <br><br>
  * If no delim characters are specified, any whitespace character is used to
  * split. Whitespace characters include tab (\t), line feed (\n), carriage
  * return (\r), form feed (\f), and space.
@@ -445,11 +473,32 @@ p5.prototype.split = function(str, delim) {
  *
  *   print(myStrArr); // prints : ["Mango"," Banana"," Lime"]
  * }
- * </div>
  * </code>
+ * </div>
  */
 p5.prototype.splitTokens = function() {
-  var d = (arguments.length > 0) ? arguments[1] : /\s/g;
+  var d,sqo,sqc,str;
+  str = arguments[1];
+  if (arguments.length > 1) {
+    sqc = /\]/g.exec(str);
+    sqo = /\[/g.exec(str);
+    if ( sqo && sqc ) {
+      str = str.slice(0, sqc.index) + str.slice(sqc.index+1);
+      sqo = /\[/g.exec(str);
+      str = str.slice(0, sqo.index) + str.slice(sqo.index+1);
+      d = new RegExp('[\\['+str+'\\]]','g');
+    } else if ( sqc ) {
+      str = str.slice(0, sqc.index) + str.slice(sqc.index+1);
+      d = new RegExp('[' + str + '\\]]', 'g');
+    } else if(sqo) {
+      str = str.slice(0, sqo.index) + str.slice(sqo.index+1);
+      d = new RegExp('[' + str + '\\[]', 'g');
+    } else {
+      d = new RegExp('[' + str + ']', 'g');
+    }
+  } else {
+    d = /\s/g;
+  }
   return arguments[0].split(d).filter(function(n){return n;});
 };
 
@@ -459,7 +508,7 @@ p5.prototype.splitTokens = function() {
  * and tab, this function also removes the Unicode "nbsp" character.
  *
  * @method trim
- * @param  {String|Array} [str] a String or Array of Strings to be trimmed
+ * @param  {String|Array} str a String or Array of Strings to be trimmed
  * @return {String|Array}       a trimmed String or Array of Strings
  * @example
  * <div>
@@ -468,6 +517,10 @@ p5.prototype.splitTokens = function() {
  * text(string +" here", 2, 50);
  * </code>
  * </div>
+ *
+ * @alt
+ * "No new lines here" displayed center canvas
+ *
  */
 p5.prototype.trim = function(str) {
   if (str instanceof Array) {

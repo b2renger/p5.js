@@ -25,7 +25,11 @@ var p5 = require('../core/core');
  *   print(x); // -3
  *   print(y); // 3
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * no image displayed
+ *
  */
 p5.prototype.abs = Math.abs;
 
@@ -61,7 +65,11 @@ p5.prototype.abs = Math.abs;
  *   text(nfc(ax, 2,2), ax, ay - 5);
  *   text(nfc(bx,1,1), bx, by - 5);
  * }
- * </div></code>
+ * </code></div>
+  *
+ * @alt
+ * 2 horizontal lines & number sets. increase with mouse x. bottom to 2 decimals
+ *
  */
 p5.prototype.ceil = Math.ceil;
 
@@ -99,7 +107,11 @@ p5.prototype.ceil = Math.ceil;
  *   fill(0);
  *   ellipse(xc, 66, 9,9); // Constrained
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * 2 vertical lines. 2 ellipses move with mouse X 1 does not move passed lines
+ *
  */
 p5.prototype.constrain = function(n, low, high) {
   return Math.max(Math.min(n, high), low);
@@ -111,8 +123,10 @@ p5.prototype.constrain = function(n, low, high) {
  * @method dist
  * @param  {Number} x1 x-coordinate of the first point
  * @param  {Number} y1 y-coordinate of the first point
+ * @param  {Number} [z1] z-coordinate of the first point
  * @param  {Number} x2 x-coordinate of the second point
  * @param  {Number} y2 y-coordinate of the second point
+ * @param  {Number} [z2] z-coordinate of the second point
  * @return {Number}    distance between the two points
  * @example
  * <div><code>
@@ -143,10 +157,19 @@ p5.prototype.constrain = function(n, low, high) {
  *   pop();
  *   // Fancy!
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * 2 ellipses joined by line. 1 ellipse moves with mouse X&Y. Distance displayed.
+ *
  */
-p5.prototype.dist = function(x1, y1, x2, y2) {
-  return Math.sqrt( (x2-x1)*(x2-x1) + (y2-y1)*(y2-y1) );
+p5.prototype.dist = function(x1, y1, z1, x2, y2, z2) {
+  if (arguments.length === 4) {
+    // In the case of 2d: z1 means x2 and x2 means y2
+    return hypot(z1-x1, x2-y1);
+  } else if (arguments.length === 6) {
+    return hypot(x2-x1, y2-y1, z2-z1);
+  }
 };
 
 /**
@@ -191,7 +214,11 @@ p5.prototype.dist = function(x1, y1, x2, y2) {
  *   line(0, 0, 0, height);
  *   line(0, height-1, width, height-1);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * ellipse moves along a curve with mouse x. e^n displayed.
+ *
  */
 p5.prototype.exp = Math.exp;
 
@@ -226,7 +253,11 @@ p5.prototype.exp = Math.exp;
  *   text(nfc(ax, 2,2), ax, ay - 5);
  *   text(nfc(bx,1,1), bx, by - 5);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * 2 horizontal lines & number sets. increase with mouse x. bottom to 2 decimals
+ *
  */
 p5.prototype.floor = Math.floor;
 
@@ -257,14 +288,18 @@ p5.prototype.floor = Math.floor;
  *   strokeWeight(5);
  *   stroke(0); // Draw the original points in black
  *   point(a, y);
- *   int(b, y);
+ *   point(b, y);
  *
  *   stroke(100); // Draw the lerp points in gray
  *   point(c, y);
  *   point(d, y);
  *   point(e, y);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * 5 points horizontally staggered mid-canvas. mid 3 are grey, outer black
+ *
  */
 p5.prototype.lerp = function(start, stop, amt) {
   return amt*(stop-start)+start;
@@ -306,7 +341,7 @@ p5.prototype.lerp = function(start, stop, amt) {
  *   noFill();
  *   stroke(0);
  *   beginShape();
- *   for(var x=0; x<width; x++) {
+ *   for(var x=0; x < width; x++) {
  *     xValue = map(x, 0, width, 0, maxX);
  *     yValue = log(xValue);
  *     y = map(yValue, -maxY, maxY, height, 0);
@@ -316,7 +351,11 @@ p5.prototype.lerp = function(start, stop, amt) {
  *   line(0,0,0,height);
  *   line(0,height/2,width, height/2);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * ellipse moves along a curve with mouse x. natural logarithm of n displayed.
+ *
  */
 p5.prototype.log = Math.log;
 
@@ -340,22 +379,27 @@ p5.prototype.log = Math.log;
  *   var y2 = 70;
  *
  *   line(0, 0, x1, y1);
- *   print(mag(x1, y1));  // Prints "36.05551"
+ *   print(mag(x1, y1));  // Prints "36.05551275463989"
  *   line(0, 0, x2, y1);
- *   print(mag(x2, y1));  // Prints "85.44004"
+ *   print(mag(x2, y1));  // Prints "85.44003745317531"
  *   line(0, 0, x1, y2);
- *   print(mag(x1, y2));  // Prints "72.8011"
+ *   print(mag(x1, y2));  // Prints "72.80109889280519"
  *   line(0, 0, x2, y2);
- *   print(mag(x2, y2));  // Prints "106.30146"
+ *   print(mag(x2, y2));  // Prints "106.3014581273465"
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * 4 lines of different length radiate from top left of canvas.
+ *
  */
 p5.prototype.mag = function(x, y) {
-  return Math.sqrt(x*x+y*y);
+  return hypot(x, y);
 };
 
 /**
  * Re-maps a number from one range to another.
+ * <br><br>
  * In the first example above, the number 25 is converted from a value in the
  * range of 0 to 100 into a value that ranges from the left edge of the
  * window (0) to the right edge (width).
@@ -365,30 +409,33 @@ p5.prototype.mag = function(x, y) {
  * @param  {Number} start1 lower bound of the value's current range
  * @param  {Number} stop1  upper bound of the value's current range
  * @param  {Number} start2 lower bound of the value's target range
- * @param  {Number} stop   upper bound of the value's target range
+ * @param  {Number} stop2  upper bound of the value's target range
  * @return {Number}        remapped number
  * @example
  *   <div><code>
- *     createCanvas(200, 200);
  *     var value = 25;
  *     var m = map(value, 0, 100, 0, width);
- *     ellipse(m, 200, 10, 10);
+ *     ellipse(m, 50, 10, 10);
  *   </code></div>
  *
  *   <div><code>
  *     function setup() {
- *       createCanvs(200, 200);
  *       noStroke();
  *     }
  *
  *     function draw() {
  *       background(204);
- *       var x1 = map(mouseX, 0, width, 50, 150);
- *       ellipse(x1, 75, 50, 50);
- *       var x2 = map(mouseX, 0, width, 0, 200);
- *       ellipse(x2, 125, 50, 50);
+ *       var x1 = map(mouseX, 0, width, 25, 75);
+ *       ellipse(x1, 25, 25, 25);
+ *       var x2 = map(mouseX, 0, width, 0, 100);
+ *       ellipse(x2, 75, 25, 25);
  *     }
- *   </div></code>
+ *   </code></div>
+ *
+ * @alt
+ * 10 by 10 white ellipse with in mid left canvas
+ * 2 25 by 25 white ellipses move with mouse x. Bottom has more range from X
+ *
  */
 p5.prototype.map = function(n, start1, stop1, start2, stop2) {
   return ((n-start1)/(stop1-start1))*(stop2-start2)+start2;
@@ -423,7 +470,11 @@ p5.prototype.map = function(n, start1, stop1, start2, stop2) {
  *   textSize(32);
  *   text(max(numArray), maxX, maxY);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * Small text at top reads: Array Elements 2 1 5 4 8 9. Large text at center: 9
+ *
  */
 p5.prototype.max = function() {
   if (arguments[0] instanceof Array) {
@@ -462,7 +513,11 @@ p5.prototype.max = function() {
  *   textSize(32);
  *   text(min(numArray), maxX, maxY);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * Small text at top reads: Array Elements 2 1 5 4 8 9. Large text at center: 1
+ *
  */
 p5.prototype.min = function() {
   if (arguments[0] instanceof Array) {
@@ -514,7 +569,11 @@ p5.prototype.min = function() {
  *   normalX = 20;
  *   text(normalized, normalX, normalY);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * ellipse moves with mouse. 0 shown left & 100 right and updating values center
+ *
  */
 p5.prototype.norm = function(n, start, stop) {
   return this.map(n, start, stop, 0, 1);
@@ -546,7 +605,11 @@ p5.prototype.norm = function(n, start, stop) {
  *
  *   ellipse(eLoc*8, eLoc*8, pow(eSize, 4), pow(eSize, 4));
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * small to large ellipses radiating from top left of canvas
+ *
  */
 p5.prototype.pow = Math.pow;
 
@@ -581,7 +644,11 @@ p5.prototype.pow = Math.pow;
  *   text(nfc(ax, 2,2), ax, ay - 5);
  *   text(nfc(bx,1,1), bx, by - 5);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * horizontal center line squared values displayed on top and regular on bottom.
+ *
  */
 p5.prototype.round = Math.round;
 
@@ -616,12 +683,17 @@ p5.prototype.round = Math.round;
  *   line(0, height/2, width, height/2);
  *
  *   // Draw text.
+ *   var spacing = 15;
  *   noStroke();
  *   fill(0);
  *   text("x = " + x1, 0, y1 + spacing);
- *   text("sqrt(x) = " + x2, 0, y2 + spacing);
+ *   text("sq(x) = " + x2, 0, y2 + spacing);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * horizontal center line squared values displayed on top and regular on bottom.
+ *
  */
 p5.prototype.sq = function(n) { return n*n; };
 
@@ -663,8 +735,54 @@ p5.prototype.sq = function(n) { return n*n; };
  *   text("x = " + x1, 0, y1 + spacing);
  *   text("sqrt(x) = " + x2, 0, y2 + spacing);
  * }
- * </div></code>
+ * </code></div>
+ *
+ * @alt
+ * horizontal center line squareroot values displayed on top and regular on bottom.
+ *
  */
 p5.prototype.sqrt = Math.sqrt;
+
+// Calculate the length of the hypotenuse of a right triangle
+// This won't under- or overflow in intermediate steps
+// https://en.wikipedia.org/wiki/Hypot
+function hypot(x, y, z) {
+  // Use the native implementation if it's available
+  if (typeof Math.hypot === 'function') {
+    return Math.hypot.apply(null, arguments);
+  }
+
+  // Otherwise use the V8 implementation
+  // https://github.com/v8/v8/blob/8cd3cf297287e581a49e487067f5cbd991b27123/src/js/math.js#L217
+  var length = arguments.length;
+  var args = [];
+  var max = 0;
+  for (var i = 0; i < length; i++) {
+    var n = arguments[i];
+    n = +n;
+    if (n === Infinity || n === -Infinity) {
+      return Infinity;
+    }
+    n = Math.abs(n);
+    if (n > max) {
+      max = n;
+    }
+    args[i] = n;
+  }
+
+  if (max === 0) {
+    max = 1;
+  }
+  var sum = 0;
+  var compensation = 0;
+  for (var j = 0; j < length; j++) {
+    var m = args[j] / max;
+    var summand = m * m - compensation;
+    var preliminary = sum + summand;
+    compensation = (preliminary - sum) - summand;
+    sum = preliminary;
+  }
+  return Math.sqrt(sum) * max;
+}
 
 module.exports = p5;

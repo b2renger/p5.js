@@ -17,6 +17,7 @@ var isBezier = false;
 var isCurve = false;
 var isQuadratic = false;
 var isContour = false;
+var isFirstContour = true;
 
 /**
  * Use the beginContour() and endContour() functions to create negative
@@ -55,6 +56,10 @@ var isContour = false;
  * endShape(CLOSE);
  * </code>
  * </div>
+ *
+ * @alt
+ * white rect and smaller grey rect with red outlines in center of canvas.
+ *
  */
 p5.prototype.beginContour = function() {
   contourVertices = [];
@@ -67,21 +72,21 @@ p5.prototype.beginContour = function() {
  * complex forms. beginShape() begins recording vertices for a shape and
  * endShape() stops recording. The value of the kind parameter tells it which
  * types of shapes to create from the provided vertices. With no mode
- * specified, the shape can be any irregular polygon. The parameters
- * available for beginShape() are POINTS, LINES, TRIANGLES, TRIANGLE_FAN,
- * TRIANGLE_STRIP, QUADS, and QUAD_STRIP. After calling the beginShape()
- * function, a series of vertex() commands must follow. To stop drawing the
- * shape, call endShape(). Each shape will be outlined with the current
- * stroke color and filled with the fill color.
- *
+ * specified, the shape can be any irregular polygon.
+ * <br><br>
+ * The parameters available for beginShape() are POINTS, LINES, TRIANGLES,
+ * TRIANGLE_FAN, TRIANGLE_STRIP, QUADS, and QUAD_STRIP. After calling the
+ * beginShape() function, a series of vertex() commands must follow. To stop
+ * drawing the shape, call endShape(). Each shape will be outlined with the
+ * current stroke color and filled with the fill color.
+ * <br><br>
  * Transformations such as translate(), rotate(), and scale() do not work
  * within beginShape(). It is also not possible to use other shapes, such as
  * ellipse() or rect() within beginShape().
  *
  * @method beginShape
- * @param  {Number/Constant} kind either POINTS, LINES, TRIANGLES,
- *                                TRIANGLE_FAN, TRIANGLE_STRIP, QUADS,
- *                                or QUAD_STRIP
+ * @param  {Constant} kind either POINTS, LINES, TRIANGLES, TRIANGLE_FAN
+ *                                TRIANGLE_STRIP, QUADS, or QUAD_STRIP
  * @return {Object}               the p5 object
  * @example
  * <div>
@@ -224,22 +229,35 @@ p5.prototype.beginContour = function() {
  * endShape(CLOSE);
  * </code>
  * </div>
+  * @alt
+ * white square-shape with black outline in middle-right of canvas.
+ * 4 black points in a square shape in middle-right of canvas.
+ * 2 horizontal black lines. In the top-right and bottom-right of canvas.
+ * 3 line shape with horizontal on top, vertical in middle and horizontal bottom.
+ * square line shape in middle-right of canvas.
+ * 2 white triangle shapes mid-right canvas. left one pointing up and right down.
+ * 5 horizontal interlocking and alternating white triangles in mid-right canvas.
+ * 4 interlocking white triangles in 45 degree rotated square-shape.
+ * 2 white rectangle shapes in mid-right canvas. Both 20x55.
+ * 3 side-by-side white rectangles center rect is smaller in mid-right canvas.
+ * Thick white l-shape with black outline mid-top-left of canvas.
+ *
  */
 p5.prototype.beginShape = function(kind) {
-  if(this._graphics.isP3D){
-    this._graphics.beginShape(kind);
-  }else{
-    if (kind === constants.POINTS ||
-      kind === constants.LINES ||
-      kind === constants.TRIANGLES ||
-      kind === constants.TRIANGLE_FAN ||
-      kind === constants.TRIANGLE_STRIP ||
-      kind === constants.QUADS ||
-      kind === constants.QUAD_STRIP) {
-      shapeKind = kind;
-    } else {
-      shapeKind = null;
-    }
+  if (kind === constants.POINTS ||
+    kind === constants.LINES ||
+    kind === constants.TRIANGLES ||
+    kind === constants.TRIANGLE_FAN ||
+    kind === constants.TRIANGLE_STRIP ||
+    kind === constants.QUADS ||
+    kind === constants.QUAD_STRIP) {
+    shapeKind = kind;
+  } else {
+    shapeKind = null;
+  }
+  if(this._renderer.isP3D){
+    this._renderer.beginShape(kind);
+  } else {
     vertices = [];
     contourVertices = [];
   }
@@ -250,7 +268,9 @@ p5.prototype.beginShape = function(kind) {
  * Specifies vertex coordinates for Bezier curves. Each call to
  * bezierVertex() defines the position of two control points and
  * one anchor point of a Bezier curve, adding a new segment to a
- * line or shape. The first time bezierVertex() is used within a
+ * line or shape.
+ * <br><br>
+ * The first time bezierVertex() is used within a
  * beginShape() call, it must be prefaced with a call to vertex()
  * to set the first anchor point. This function must be used between
  * beginShape() and endShape() and only when there is no MODE
@@ -284,6 +304,11 @@ p5.prototype.beginShape = function(kind) {
  * endShape();
  * </code>
  * </div>
+ *
+ * @alt
+ * crescent-shaped line in middle of canvas. Points facing left.
+ * white crescent shape in middle of canvas. Points facing left.
+ *
  */
 p5.prototype.bezierVertex = function(x2, y2, x3, y3, x4, y4) {
   if (vertices.length === 0) {
@@ -307,8 +332,9 @@ p5.prototype.bezierVertex = function(x2, y2, x3, y3, x4, y4) {
 /**
  * Specifies vertex coordinates for curves. This function may only
  * be used between beginShape() and endShape() and only when there
- * is no MODE parameter specified to beginShape(). The first and
- * last points in a series of curveVertex() lines will be used to
+ * is no MODE parameter specified to beginShape().
+ * <br><br>
+ * The first and last points in a series of curveVertex() lines will be used to
  * guide the beginning and end of a the curve. A minimum of four
  * points is required to draw a tiny curve between the second and
  * third points. Adding a fifth point with curveVertex() will draw
@@ -334,6 +360,10 @@ p5.prototype.bezierVertex = function(x2, y2, x3, y3, x4, y4) {
  * endShape();
  * </code>
  * </div>
+ *
+ * @alt
+ * Upside-down u-shape line, mid canvas. left point extends beyond canvas view.
+ *
  */
 p5.prototype.curveVertex = function(x,y) {
   isCurve = true;
@@ -378,6 +408,10 @@ p5.prototype.curveVertex = function(x,y) {
  * endShape(CLOSE);
  * </code>
  * </div>
+ *
+ * @alt
+ * white rect and smaller grey rect with red outlines in center of canvas.
+ *
  */
 p5.prototype.endContour = function() {
   var vert = contourVertices[0].slice(); // copy all data
@@ -385,7 +419,12 @@ p5.prototype.endContour = function() {
   vert.moveTo = false;
   contourVertices.push(vert);
 
-  vertices.push(vertices[0]);
+  // prevent stray lines with multiple contours
+  if (isFirstContour) {
+    vertices.push(vertices[0]);
+    isFirstContour = false;
+  }
+
   for (var i = 0; i < contourVertices.length; i++) {
     vertices.push(contourVertices[i]);
   }
@@ -400,7 +439,7 @@ p5.prototype.endContour = function() {
  * the shape (to connect the beginning and the end).
  *
  * @method endShape
- * @param  {Number/Constant} mode use CLOSE to close the shape
+ * @param  {Constant} mode use CLOSE to close the shape
  * @return {Object}               the p5 object
  * @example
  * <div>
@@ -420,13 +459,18 @@ p5.prototype.endContour = function() {
  * endShape();
  * </code>
  * </div>
+ *
+ * @alt
+ * Triangle line shape with smallest interior angle on bottom and upside-down L.
+ *
  */
 p5.prototype.endShape = function(mode) {
-  if(this._graphics.isP3D){
-    this._graphics.endShape();
+  if(this._renderer.isP3D){
+    this._renderer.endShape(mode, isCurve, isBezier,
+      isQuadratic, isContour, shapeKind);
   }else{
     if (vertices.length === 0) { return this; }
-    if (!this._doStroke && !this._doFill) { return this; }
+    if (!this._renderer._doStroke && !this._renderer._doFill) { return this; }
 
     var closeShape = mode === constants.CLOSE;
 
@@ -435,7 +479,7 @@ p5.prototype.endShape = function(mode) {
       vertices.push(vertices[0]);
     }
 
-    this._graphics.endShape(mode, vertices, isCurve, isBezier,
+    this._renderer.endShape(mode, vertices, isCurve, isBezier,
       isQuadratic, isContour, shapeKind);
 
     // Reset some settings
@@ -443,6 +487,7 @@ p5.prototype.endShape = function(mode) {
     isBezier = false;
     isQuadratic = false;
     isContour = false;
+    isFirstContour = true;
 
     // If the shape is closed, the first element was added as last element.
     // We must remove it again to prevent the list of vertices from growing
@@ -493,6 +538,11 @@ p5.prototype.endShape = function(mode) {
  * endShape();
  * </code>
  * </div>
+ *
+ * @alt
+ * arched-shaped black line with 4 pixel thick stroke weight.
+ * backwards s-shaped black line with 4 pixel thick stroke weight.
+ *
  */
 p5.prototype.quadraticVertex = function(cx, cy, x3, y3) {
   //if we're drawing a contour, put the points into an
@@ -547,12 +597,35 @@ p5.prototype.quadraticVertex = function(cx, cy, x3, y3) {
  * endShape();
  * </code>
  * </div>
+ *
+ * @alt
+ * 4 black points in a square shape in middle-right of canvas.
+ *
  */
 p5.prototype.vertex = function(x, y, moveTo) {
-  if(this._graphics.isP3D){
-    this._graphics.vertex
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
+  if(this._renderer.isP3D){
+    this._validateParameters(
+      'vertex',
+      args,
+      [
+        ['Number', 'Number', 'Number']
+      ]
+    );
+    this._renderer.vertex
     (arguments[0], arguments[1], arguments[2]);
   }else{
+    this._validateParameters(
+      'vertex',
+      args,
+      [
+        ['Number', 'Number'],
+        ['Number', 'Number', 'Number']
+      ]
+    );
     var vert = [];
     vert.isVert = true;
     vert[0] = x;
@@ -560,8 +633,8 @@ p5.prototype.vertex = function(x, y, moveTo) {
     vert[2] = 0;
     vert[3] = 0;
     vert[4] = 0;
-    vert[5] = this._graphics._getFill();
-    vert[6] = this._graphics._getStroke();
+    vert[5] = this._renderer._getFill();
+    vert[6] = this._renderer._getStroke();
 
     if (moveTo) {
       vert.moveTo = moveTo;

@@ -22,14 +22,17 @@ var Filters = require('./filters');
 
 /**
  * Creates a new p5.Image. A p5.Image is a canvas backed representation of an
- * image. p5 can display .gif, .jpg and .png images. Images may be displayed
+ * image.
+ * <br><br>
+ * p5 can display .gif, .jpg and .png images. Images may be displayed
  * in 2D and 3D space. Before an image is used, it must be loaded with the
  * loadImage() function. The p5.Image class contains fields for the width and
  * height of the image, as well as an array called pixels[] that contains the
- * values for every pixel in the image. The methods described below allow
- * easy access to the image's pixels and alpha channel and simplify the
- * process of compositing.
- *
+ * values for every pixel in the image.
+ * <br><br>
+ * The methods described below allow easy access to the image's pixels and
+ * alpha channel and simplify the process of compositing.
+ * <br><br>
  * Before using the pixels[] array, be sure to use the loadPixels() method on
  * the image to make sure that the pixel data is properly loaded.
  *
@@ -43,18 +46,62 @@ p5.Image = function(width, height){
   /**
    * Image width.
    * @property width
+   * @example
+   * <div><code>
+   * var img;
+   * function preload() {
+   *   img = loadImage("assets/rockies.jpg");
+   * }
+   *
+   * function setup() {
+   *   createCanvas(100, 100);
+   *   image(img, 0, 0);
+   *   for (var i=0; i < img.width; i++) {
+   *     var c = img.get(i, img.height/2);
+   *     stroke(c);
+   *     line(i, height/2, i, height);
+   *   }
+   * }
+   * </code></div>
+   *
+   * @alt
+   * rocky mountains in top and horizontal lines in corresponding colors in bottom.
+   *
    */
   this.width = width;
   /**
    * Image height.
    * @property height
+   * @example
+   * <div><code>
+   * var img;
+   * function preload() {
+   *   img = loadImage("assets/rockies.jpg");
+   * }
+   *
+   * function setup() {
+   *   createCanvas(100, 100);
+   *   image(img, 0, 0);
+   *   for (var i=0; i < img.height; i++) {
+   *     var c = img.get(img.width/2, i);
+   *     stroke(c);
+   *     line(0, i, width/2, i);
+   *   }
+   * }
+   * </code></div>
+   *
+   * @alt
+   * rocky mountains on right and vertical lines in corresponding colors on left.
+   *
    */
   this.height = height;
   this.canvas = document.createElement('canvas');
   this.canvas.width = this.width;
   this.canvas.height = this.height;
   this.drawingContext = this.canvas.getContext('2d');
-  this.pixelDensity = 1;
+  this._pixelDensity = 1;
+  //used for webgl texturing only
+  this.isTexture = false;
   /**
    * Array containing the values for all the pixels in the display window.
    * These values are numbers. This array is the size (include an appropriate
@@ -80,6 +127,7 @@ p5.Image = function(width, height){
    *     pixels[idx+3] = a;
    *   }
    * }
+   * </pre></code>
    * <br><br>
    * Before accessing this array, the data must loaded with the loadPixels()
    * function. After the array data has been modified, the updatePixels()
@@ -114,6 +162,11 @@ p5.Image = function(width, height){
    * image(img, 17, 17);
    * </code>
    * </div>
+   *
+   * @alt
+   * 66x66 turquoise rect in center of canvas
+   * 66x66 pink rect in center of canvas
+   *
    */
   this.pixels = [];
 };
@@ -130,6 +183,32 @@ p5.Image.prototype._setProperty = function (prop, value) {
  * Loads the pixels data for this image into the [pixels] attribute.
  *
  * @method loadPixels
+ * @example
+ * <div><code>
+ * var myImage;
+ * var halfImage;
+ *
+ * function preload() {
+ *   myImage = loadImage("assets/rockies.jpg");
+ * }
+ *
+ * function setup() {
+ *   myImage.loadPixels();
+ *   halfImage = 4 * width * height/2;
+ *   for(var i = 0; i < halfImage; i++){
+ *     myImage.pixels[i+halfImage] = myImage.pixels[i];
+ *   }
+ *   myImage.updatePixels();
+ * }
+ *
+ * function draw() {
+ *   image(myImage, 0, 0);
+ * }
+ * </code></div>
+ *
+   * @alt
+   * 2 images of rocky mountains vertically stacked
+   *
  */
 p5.Image.prototype.loadPixels = function(){
   p5.Renderer2D.prototype.loadPixels.call(this);
@@ -148,6 +227,32 @@ p5.Image.prototype.loadPixels = function(){
  *                              underlying canvas
  * @param {Integer|undefined} h height of the target update area for the
  *                              underlying canvas
+ * @example
+ * <div><code>
+ * var myImage;
+ * var halfImage;
+ *
+ * function preload() {
+ *   myImage = loadImage("assets/rockies.jpg");
+ * }
+ *
+ * function setup() {
+ *   myImage.loadPixels();
+ *   halfImage = 4 * width * height/2;
+ *   for(var i = 0; i < halfImage; i++){
+ *     myImage.pixels[i+halfImage] = myImage.pixels[i];
+ *   }
+ *   myImage.updatePixels();
+ * }
+ *
+ * function draw() {
+ *   image(myImage, 0, 0);
+ * }
+ * </code></div>
+ *
+ * @alt
+ * 2 images of rocky mountains vertically stacked
+ *
  */
 p5.Image.prototype.updatePixels = function(x, y, w, h){
   p5.Renderer2D.prototype.updatePixels.call(this, x, y, w, h);
@@ -170,6 +275,29 @@ p5.Image.prototype.updatePixels = function(x, y, w, h){
  * @param  {Number}               [h] height
  * @return {Array/Color | p5.Image}     color of pixel at x,y in array format
  *                                    [R, G, B, A] or p5.Image
+ * @example
+ * <div><code>
+ * var myImage;
+ * var c;
+ *
+ * function preload() {
+ *   myImage = loadImage("assets/rockies.jpg");
+ * }
+ *
+ * function setup() {
+ *   background(myImage);
+ *   noStroke();
+ *   c = myImage.get(60, 90);
+ *   fill(c);
+ *   rect(25, 25, 50, 50);
+ * }
+ *
+ * //get() returns color here
+ * </code></div>
+ *
+ * @alt
+ * image of rocky mountains with 50x50 green rect in front
+ *
  */
 p5.Image.prototype.get = function(x, y, w, h){
   return p5.Renderer2D.prototype.get.call(this, x, y, w, h);
@@ -203,6 +331,10 @@ p5.Image.prototype.get = function(x, y, w, h){
  * image(img, 34, 34);
  * </code>
  * </div>
+ *
+ * @alt
+ * 2 gradated dark turquoise rects fade left. 1 center 1 bottom right of canvas
+ *
  */
 p5.Image.prototype.set = function(x, y, imgOrCol){
   p5.Renderer2D.prototype.set.call(this, x, y, imgOrCol);
@@ -233,6 +365,10 @@ p5.Image.prototype.set = function(x, y, imgOrCol){
  *   img.resize(50, 100);
  * }
  * </code></div>
+ *
+ * @alt
+ * image of rocky mountains. zoomed in
+ *
  */
 p5.Image.prototype.resize = function(width, height){
 
@@ -245,8 +381,19 @@ p5.Image.prototype.resize = function(width, height){
   // reference to the backing canvas of a p5.Image. But since we do not
   // enforce that at the moment, I am leaving in the slower, but safer
   // implementation.
-  width = width || this.canvas.width;
-  height = height || this.canvas.height;
+
+  // auto-resize
+  if (width === 0 && height === 0) {
+    width = this.canvas.width;
+    height = this.canvas.height;
+  } else if (width === 0) {
+    width = this.canvas.width * height / this.canvas.height;
+  } else if (height === 0) {
+    height = this.canvas.height * width / this.canvas.width;
+  }
+
+  width = Math.floor(width);
+  height = Math.floor(height);
 
   var tempCanvas = document.createElement('canvas');
   tempCanvas.width = width;
@@ -290,6 +437,29 @@ p5.Image.prototype.resize = function(width, height){
  * @param  {Integer} dy Y coordinate of the destination's upper left corner
  * @param  {Integer} dw destination image width
  * @param  {Integer} dh destination image height
+ * @example
+ * <div><code>
+ * var photo;
+ * var bricks;
+ * var x;
+ * var y;
+ *
+ * function preload() {
+ *   photo = loadImage("assets/rockies.jpg");
+ *   bricks = loadImage("assets/bricks.jpg");
+ * }
+ *
+ * function setup() {
+ *   x = bricks.width/2;
+ *   y = bricks.height/2;
+ *   photo.copy(bricks, 0, 0, x, y, 0, 0, x, y);
+ *   image(photo, 0, 0);
+ * }
+ * </code></div>
+ *
+ * @alt
+ * image of rocky mountains and smaller image on top of bricks at top left
+ *
  */
 p5.Image.prototype.copy = function () {
   p5.prototype.copy.apply(this, arguments);
@@ -297,21 +467,38 @@ p5.Image.prototype.copy = function () {
 
 /**
  * Masks part of an image from displaying by loading another
- * image and using it's alpha channel as an alpha channel for
+ * image and using it's blue channel as an alpha channel for
  * this image.
  *
  * @method mask
- * @param {p5.Image|undefined} srcImage source image
+ * @param {p5.Image} srcImage source image
+ * @example
+ * <div><code>
+ * var photo, maskImage;
+ * function preload() {
+ *   photo = loadImage("assets/rockies.jpg");
+ *   maskImage = loadImage("assets/mask2.png");
+ * }
  *
- * TODO: - Accept an array of alpha values.
- *       - Use other channels of an image. p5 uses the
- *       blue channel (which feels kind of arbitrary). Note: at the
- *       moment this method does not match native processings original
- *       functionality exactly.
+ * function setup() {
+ *   createCanvas(100, 100);
+ *   photo.mask(maskImage);
+ *   image(photo, 0, 0);
+ * }
+ * </code></div>
+ *
+ * @alt
+ * image of rocky mountains with white at right
+ *
  *
  * http://blogs.adobe.com/webplatform/2013/01/28/blending-features-in-canvas/
  *
  */
+// TODO: - Accept an array of alpha values.
+//       - Use other channels of an image. p5 uses the
+//       blue channel (which feels kind of arbitrary). Note: at the
+//       moment this method does not match native processings original
+//       functionality exactly.
 p5.Image.prototype.mask = function(p5Image) {
   if(p5Image === undefined){
     p5Image = this;
@@ -320,7 +507,7 @@ p5.Image.prototype.mask = function(p5Image) {
 
   var scaleFactor = 1;
   if (p5Image instanceof p5.Renderer) {
-    scaleFactor = p5Image._pInst.pixelDensity;
+    scaleFactor = p5Image._pInst._pixelDensity;
   }
 
   var copyArgs = [
@@ -336,7 +523,7 @@ p5.Image.prototype.mask = function(p5Image) {
   ];
 
   this.drawingContext.globalCompositeOperation = 'destination-in';
-  this.copy.apply(this, copyArgs);
+  p5.Image.prototype.copy.apply(this, copyArgs);
   this.drawingContext.globalCompositeOperation = currBlend;
 };
 
@@ -348,6 +535,26 @@ p5.Image.prototype.mask = function(p5Image) {
  *                           opaque see Filters.js for docs on each available
  *                           filter
  * @param {Number|undefined} value
+ * @example
+ * <div><code>
+ * var photo1;
+ * var photo2;
+ *
+ * function preload() {
+ *   photo1 = loadImage("assets/rockies.jpg");
+ *   photo2 = loadImage("assets/rockies.jpg");
+ * }
+ *
+ * function setup() {
+ *   photo2.filter("gray");
+ *   image(photo1, 0, 0);
+ *   image(photo2, width/2, 0);
+ * }
+ * </code></div>
+ *
+ * @alt
+ * 2 images of rocky mountains left one in color, right in black and white
+ *
  */
 p5.Image.prototype.filter = function(operation, value) {
   Filters.apply(this.canvas, Filters[operation.toLowerCase()], value);
@@ -376,6 +583,57 @@ p5.Image.prototype.filter = function(operation, value) {
  *
  *
  * http://blogs.adobe.com/webplatform/2013/01/28/blending-features-in-canvas/
+ * @example
+ * <div><code>
+ * var mountains;
+ * var bricks;
+ *
+ * function preload() {
+ *   mountains = loadImage("assets/rockies.jpg");
+ *   bricks = loadImage("assets/bricks_third.jpg");
+ * }
+ *
+ * function setup() {
+ *   mountains.blend(bricks, 0, 0, 33, 100, 67, 0, 33, 100, ADD);
+ *   image(mountains, 0, 0);
+ *   image(bricks, 0, 0);
+ * }
+ * </code></div>
+ * <div><code>
+ * var mountains;
+ * var bricks;
+ *
+ * function preload() {
+ *   mountains = loadImage("assets/rockies.jpg");
+ *   bricks = loadImage("assets/bricks_third.jpg");
+ * }
+ *
+ * function setup() {
+ *   mountains.blend(bricks, 0, 0, 33, 100, 67, 0, 33, 100, DARKEST);
+ *   image(mountains, 0, 0);
+ *   image(bricks, 0, 0);
+ * }
+ * </code></div>
+ * <div><code>
+ * var mountains;
+ * var bricks;
+ *
+ * function preload() {
+ *   mountains = loadImage("assets/rockies.jpg");
+ *   bricks = loadImage("assets/bricks_third.jpg");
+ * }
+ *
+ * function setup() {
+ *   mountains.blend(bricks, 0, 0, 33, 100, 67, 0, 33, 100, LIGHTEST);
+ *   image(mountains, 0, 0);
+ *   image(bricks, 0, 0);
+ * }
+ * </code></div>
+ *
+ * @alt
+ * image of rocky mountains. Brick images on left and right. Right overexposed
+ * image of rockies. Brickwall images on left and right. Right mortar transparent
+ * image of rockies. Brickwall images on left and right. Right translucent
  *
  */
 p5.Image.prototype.blend = function() {
@@ -390,6 +648,28 @@ p5.Image.prototype.blend = function() {
  * @method save
  * @param {String} filename give your file a name
  * @param  {String} extension 'png' or 'jpg'
+ * @example
+ * <div><code>
+ * var photo;
+ *
+ * function preload() {
+ *   photo = loadImage("assets/rockies.jpg");
+ * }
+ *
+ * function draw() {
+ *   image(photo, 0, 0);
+ * }
+ *
+ * function keyTyped() {
+ *   if (key == 's') {
+ *     photo.save("photo", "png");
+ *   }
+ * }
+ * </code></div>
+ *
+ * @alt
+ * image of rocky mountains.
+ *
  */
 p5.Image.prototype.save = function(filename, extension) {
   var mimeType;
@@ -400,18 +680,18 @@ p5.Image.prototype.save = function(filename, extension) {
   else {
     // en.wikipedia.org/wiki/Comparison_of_web_browsers#Image_format_support
     switch(extension.toLowerCase()){
-    case 'png':
-      mimeType = 'image/png';
-      break;
-    case 'jpeg':
-      mimeType = 'image/jpeg';
-      break;
-    case 'jpg':
-      mimeType = 'image/jpeg';
-      break;
-    default:
-      mimeType = 'image/png';
-      break;
+      case 'png':
+        mimeType = 'image/png';
+        break;
+      case 'jpeg':
+        mimeType = 'image/jpeg';
+        break;
+      case 'jpg':
+        mimeType = 'image/jpeg';
+        break;
+      default:
+        mimeType = 'image/png';
+        break;
     }
   }
   var downloadMime = 'image/octet-stream';

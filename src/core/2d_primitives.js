@@ -10,14 +10,19 @@
 
 var p5 = require('./core');
 var constants = require('./constants');
-
+var canvas = require('./canvas');
 require('./error_helpers');
 
 /**
  * Draw an arc to the screen. If called with only a, b, c, d, start, and
- * stop, the arc will pe drawn as an open pie. If mode is provided, the arc
+ * stop, the arc will be drawn as an open pie. If mode is provided, the arc
  * will be drawn either open, as a chord, or as a pie as specified. The
- * origin may be changed with the ellipseMode() function.
+ * origin may be changed with the ellipseMode() function.<br><br>
+ * Note that drawing a full circle (ex: 0 to TWO_PI) will appear blank
+ * because 0 and TWO_PI are the same position on the unit circle. The
+ * best way to handle this is by using the ellipse() function instead
+ * to create a closed ellipse, and to use the arc() function
+ * only to draw parts of an ellipse.
  *
  * @method arc
  * @param  {Number} a      x-coordinate of the arc's ellipse
@@ -26,7 +31,7 @@ require('./error_helpers');
  * @param  {Number} d      height of the arc's ellipse by default
  * @param  {Number} start  angle to start the arc, specified in radians
  * @param  {Number} stop   angle to stop the arc, specified in radians
- * @param  {String} [mode] optional parameter to determine the way of drawing
+ * @param  {Constant} [mode] optional parameter to determine the way of drawing
  *                         the arc
  * @return {Object}        the p5 object
  * @example
@@ -57,19 +62,20 @@ require('./error_helpers');
  * arc(50, 50, 80, 80, 0, PI+QUARTER_PI, PIE);
  * </code>
  * </div>
+ *
+ * @alt
+ *shattered outline of an ellipse with a quarter of a white circle bottom-right.
+ *white ellipse with black outline with top right missing.
+ *white ellipse with top right missing with black outline around shape.
+ *white ellipse with top right quarter missing with black outline around the shape.
+ *
  */
 p5.prototype.arc = function(x, y, w, h, start, stop, mode) {
-  this._validateParameters(
-    'arc',
-    arguments,
-    [
-      ['Number', 'Number', 'Number', 'Number', 'Number', 'Number'],
-      [ 'Number', 'Number', 'Number', 'Number',
-        'Number', 'Number', 'String' ]
-    ]
-  );
-
-  if (!this._doStroke && !this._doFill) {
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
+  if (!this._renderer._doStroke && !this._renderer._doFill) {
     return this;
   }
   if (this._angleMode === constants.DEGREES) {
@@ -87,6 +93,11 @@ p5.prototype.arc = function(x, y, w, h, start, stop, mode) {
   // ...and confine them to the interval [0,TWO_PI).
   start %= constants.TWO_PI;
   stop %= constants.TWO_PI;
+
+  // account for full circle
+  if (stop === start) {
+    stop += constants.TWO_PI;
+  }
 
   // Adjust angles to counter linear scaling.
   if (start <= constants.HALF_PI) {
@@ -112,21 +123,22 @@ p5.prototype.arc = function(x, y, w, h, start, stop, mode) {
   // p5 supports negative width and heights for ellipses
   w = Math.abs(w);
   h = Math.abs(h);
-  this._graphics.arc(x, y, w, h, start, stop, mode);
+  this._renderer.arc(x, y, w, h, start, stop, mode);
   return this;
 };
 
 /**
  * Draws an ellipse (oval) to the screen. An ellipse with equal width and
  * height is a circle. By default, the first two parameters set the location,
- * and the third and fourth parameters set the shape's width and height. The
- * origin may be changed with the ellipseMode() function.
+ * and the third and fourth parameters set the shape's width and height. If
+ * no height is specified, the value of width is used for both the width and
+ * height. The origin may be changed with the ellipseMode() function.
  *
  * @method ellipse
- * @param  {Number} a x-coordinate of the ellipse.
- * @param  {Number} b y-coordinate of the ellipse.
- * @param  {Number} c width of the ellipse.
- * @param  {Number} d height of the ellipse.
+ * @param  {Number} x x-coordinate of the ellipse.
+ * @param  {Number} y y-coordinate of the ellipse.
+ * @param  {Number} w width of the ellipse.
+ * @param  {Number} [h] height of the ellipse.
  * @return {p5}       the p5 object
  * @example
  * <div>
@@ -134,23 +146,45 @@ p5.prototype.arc = function(x, y, w, h, start, stop, mode) {
  * ellipse(56, 46, 55, 55);
  * </code>
  * </div>
+ *
+ * @alt
+ *white ellipse with black outline in middle-right of canvas that is 55x55.
+ *
  */
-p5.prototype.ellipse = function(x, y, w, h) {
-  this._validateParameters(
-    'ellipse',
-    arguments,
-    ['Number', 'Number', 'Number', 'Number']
-  );
-
-  if (!this._doStroke && !this._doFill) {
+/**
+ * @method ellipse
+ * @param {Number} x
+ * @param {Number} y
+ * @param {Number} w
+ * @param {Number} [h]
+ * @return {p5}
+ */
+p5.prototype.ellipse = function() {
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
+  // Duplicate 3rd argument if only 3 given.
+  if (args.length === 3) {
+    args.push(args[2]);
+  }
+  // p5 supports negative width and heights for rects
+  if (args[2] < 0){args[2] = Math.abs(args[2]);}
+  if (args[3] < 0){args[3] = Math.abs(args[3]);}
+  if (!this._renderer._doStroke && !this._renderer._doFill) {
     return this;
   }
-  // p5 supports negative width and heights for ellipses
-  w = Math.abs(w);
-  h = Math.abs(h);
-  //@TODO add catch block here if this._graphics
-  //doesn't have the method implemented yet
-  this._graphics.ellipse(x, y, w, h);
+  var vals = canvas.modeAdjust(
+    args[0],
+    args[1],
+    args[2],
+    args[3],
+    this._renderer._ellipseMode);
+  args[0] = vals.x;
+  args[1] = vals.y;
+  args[2] = vals.w;
+  args[3] = vals.h;
+  this._renderer.ellipse(args);
   return this;
 };
 /**
@@ -183,45 +217,45 @@ p5.prototype.ellipse = function(x, y, w, h) {
  * line(85, 75, 30, 75);
  * </code>
  * </div>
+ *
+ * @alt
+ *line 78 pixels long running from mid-top to bottom-right of canvas.
+ *3 lines of various stroke sizes. Form top, bottom and right sides of a square.
+ *
  */
 ////commented out original
 // p5.prototype.line = function(x1, y1, x2, y2) {
-//   if (!this._doStroke) {
+//   if (!this._renderer._doStroke) {
 //     return this;
 //   }
-//   if(this._graphics.isP3D){
+//   if(this._renderer.isP3D){
 //   } else {
-//     this._graphics.line(x1, y1, x2, y2);
+//     this._renderer.line(x1, y1, x2, y2);
 //   }
 // };
 p5.prototype.line = function() {
-  this._validateParameters(
-    'line',
-    arguments,
-    [
-      ['Number', 'Number', 'Number', 'Number'],
-      ['Number', 'Number', 'Number', 'Number', 'Number', 'Number']
-    ]
-  );
-
-  if (!this._doStroke) {
+  if (!this._renderer._doStroke) {
     return this;
   }
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
   //check whether we should draw a 3d line or 2d
-  if(this._graphics.isP3D){
-    this._graphics.line(
-      arguments[0],
-      arguments[1],
-      arguments[2],
-      arguments[3],
-      arguments[4],
-      arguments[5]);
+  if(this._renderer.isP3D){
+    this._renderer.line(
+      args[0],
+      args[1],
+      args[2],
+      args[3],
+      args[4],
+      args[5]);
   } else {
-    this._graphics.line(
-      arguments[0],
-      arguments[1],
-      arguments[2],
-      arguments[3]);
+    this._renderer.line(
+      args[0],
+      args[1],
+      args[2],
+      args[3]);
   }
   return this;
 };
@@ -229,7 +263,8 @@ p5.prototype.line = function() {
 /**
  * Draws a point, a coordinate in space at the dimension of one pixel.
  * The first parameter is the horizontal value for the point, the second
- * value is the vertical value for the point.
+ * value is the vertical value for the point. The color of the point is
+ * determined by the current stroke.
  *
  * @method point
  * @param  {Number} x the x-coordinate
@@ -244,31 +279,30 @@ p5.prototype.line = function() {
  * point(30, 75);
  * </code>
  * </div>
+ *
+ * @alt
+ *4 points centered in the middle-right of the canvas.
+ *
  */
 p5.prototype.point = function() {
-  this._validateParameters(
-    'point',
-    arguments,
-    [
-      ['Number', 'Number'],
-      ['Number', 'Number', 'Number']
-    ]
-  );
-
-  if (!this._doStroke) {
+  if (!this._renderer._doStroke) {
     return this;
   }
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
   //check whether we should draw a 3d line or 2d
-  if(this._graphics.isP3D){
-    this._graphics.point(
-      arguments[0],
-      arguments[1],
-      arguments[2]
+  if(this._renderer.isP3D){
+    this._renderer.point(
+      args[0],
+      args[1],
+      args[2]
       );
   } else {
-    this._graphics.point(
-      arguments[0],
-      arguments[1]
+    this._renderer.point(
+      args[0],
+      args[1]
     );
   }
   return this;
@@ -283,14 +317,14 @@ p5.prototype.point = function() {
  * clockwise or counter-clockwise around the defined shape.
  *
  * @method quad
- * @param {type} x1 the x-coordinate of the first point
- * @param {type} y1 the y-coordinate of the first point
- * @param {type} x2 the x-coordinate of the second point
- * @param {type} y2 the y-coordinate of the second point
- * @param {type} x3 the x-coordinate of the third point
- * @param {type} y3 the y-coordinate of the third point
- * @param {type} x4 the x-coordinate of the fourth point
- * @param {type} y4 the y-coordinate of the fourth point
+ * @param {Number} x1 the x-coordinate of the first point
+ * @param {Number} y1 the y-coordinate of the first point
+ * @param {Number} x2 the x-coordinate of the second point
+ * @param {Number} y2 the y-coordinate of the second point
+ * @param {Number} x3 the x-coordinate of the third point
+ * @param {Number} y3 the y-coordinate of the third point
+ * @param {Number} x4 the x-coordinate of the fourth point
+ * @param {Number} y4 the y-coordinate of the fourth point
  * @return {p5}     the p5 object
  * @example
  * <div>
@@ -298,49 +332,56 @@ p5.prototype.point = function() {
  * quad(38, 31, 86, 20, 69, 63, 30, 76);
  * </code>
  * </div>
+ *
+ * @alt
+ *irregular white quadrilateral shape with black outline mid-right of canvas.
+ *
+ */
+/**
+ * @method quad
+ * @param {Number} x1
+ * @param {Number} y1
+ * @param {Number} x2
+ * @param {Number} y2
+ * @param {Number} x3
+ * @param {Number} y3
+ * @param {Number} x4
+ * @param {Number} y4
+ * @return {p5} the p5 object
  */
 p5.prototype.quad = function() {
-  this._validateParameters(
-    'quad',
-    arguments,
-    [
-      [ 'Number', 'Number', 'Number', 'Number',
-        'Number', 'Number', 'Number', 'Number' ],
-      [ 'Number', 'Number', 'Number',
-        'Number', 'Number', 'Number',
-        'Number', 'Number', 'Number',
-        'Number', 'Number', 'Number']
-    ]
-  );
-
-  if (!this._doStroke && !this._doFill) {
+  if (!this._renderer._doStroke && !this._renderer._doFill) {
     return this;
   }
-  if(this._graphics.isP3D){
-    this._graphics.quad(
-      arguments[0],
-      arguments[1],
-      arguments[2],
-      arguments[3],
-      arguments[4],
-      arguments[5],
-      arguments[6],
-      arguments[7],
-      arguments[8],
-      arguments[9],
-      arguments[10],
-      arguments[11]
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
+  if(this._renderer.isP3D){
+    this._renderer.quad(
+      args[0],
+      args[1],
+      args[2],
+      args[3],
+      args[4],
+      args[5],
+      args[6],
+      args[7],
+      args[8],
+      args[9],
+      args[10],
+      args[11]
       );
   } else {
-    this._graphics.quad(
-     arguments[0],
-     arguments[1],
-     arguments[2],
-     arguments[3],
-     arguments[4],
-     arguments[5],
-     arguments[6],
-    arguments[7]
+    this._renderer.quad(
+     args[0],
+     args[1],
+     args[2],
+     args[3],
+     args[4],
+     args[5],
+     args[6],
+    args[7]
     );
   }
   return this;
@@ -351,11 +392,12 @@ p5.prototype.quad = function() {
 * every angle at ninety degrees. By default, the first two parameters set
 * the location of the upper-left corner, the third sets the width, and the
 * fourth sets the height. The way these parameters are interpreted, however,
-* may be changed with the rectMode() function. If provided, the fifth, sixth
-* seventh and eighth parameters, if specified, determine corner radius for
-* the top-right, top-left, lower-right and lower-left corners, respectively.
-* An omitted corner radius parameter is set to the value of the previously
-* specified radius value in the parameter list.
+* may be changed with the rectMode() function.
+* <br><br>
+* The fifth, sixth, seventh and eighth parameters, if specified,
+* determine corner radius for the top-right, top-left, lower-right and
+* lower-left corners, respectively. An omitted corner radius parameter is set
+* to the value of the previously specified radius value in the parameter list.
 *
 * @method rect
 * @param  {Number} x  x-coordinate of the rectangle.
@@ -370,7 +412,7 @@ p5.prototype.quad = function() {
 * @example
 * <div>
 * <code>
-* // Draw a rectangle at location (30, 25) with a width and height of 55.
+* // Draw a rectangle at location (30, 20) with a width and height of 55.
 * rect(30, 20, 55, 55);
 * </code>
 * </div>
@@ -386,26 +428,44 @@ p5.prototype.quad = function() {
 * <code>
 * // Draw a rectangle with rounded corners having the following radii:
 * // top-left = 20, top-right = 15, bottom-right = 10, bottom-left = 5.
-* rect(30, 20, 55, 55, 20, 15, 10, 5)
+* rect(30, 20, 55, 55, 20, 15, 10, 5);
 * </code>
 * </div>
+*
+* @alt
+* 55x55 white rect with black outline in mid-right of canvas.
+* 55x55 white rect with black outline and rounded edges in mid-right of canvas.
+* 55x55 white rect with black outline and rounded edges of different radii.
 */
-p5.prototype.rect = function (x, y, w, h, tl, tr, br, bl) {
-  this._validateParameters(
-    'rect',
-    arguments,
-    [
-      ['Number', 'Number', 'Number', 'Number'],
-      ['Number', 'Number', 'Number', 'Number', 'Number'],
-      [ 'Number', 'Number', 'Number', 'Number',
-        'Number', 'Number', 'Number', 'Number', 'Number' ]
-    ]
-  );
-
-  if (!this._doStroke && !this._doFill) {
+/**
+* @method rect
+* @param  {Number} x
+* @param  {Number} y
+* @param  {Number} w
+* @param  {Number} h
+* @param  {Number} [detailX]
+* @param  {Number} [detailY]
+* @return {p5}          the p5 object.
+*/
+p5.prototype.rect = function () {
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
+  if (!this._renderer._doStroke && !this._renderer._doFill) {
     return;
   }
-  this._graphics.rect(x, y, w, h, tl, tr, br, bl);
+  var vals = canvas.modeAdjust(
+    args[0],
+    args[1],
+    args[2],
+    args[3],
+    this._renderer._rectMode);
+  args[0] = vals.x;
+  args[1] = vals.y;
+  args[2] = vals.w;
+  args[3] = vals.h;
+  this._renderer.rect(args);
   return this;
 };
 
@@ -428,43 +488,21 @@ p5.prototype.rect = function (x, y, w, h, tl, tr, br, bl) {
 * triangle(30, 75, 58, 20, 86, 75);
 * </code>
 * </div>
+*
+*@alt
+* white triangle with black outline in mid-right of canvas.
+*
 */
 p5.prototype.triangle = function() {
-  this._validateParameters(
-    'triangle',
-    arguments,
-    [
-      ['Number', 'Number', 'Number', 'Number', 'Number', 'Number'],
-      ['Number', 'Number', 'Number', 'Number', 'Number', 'Number',
-       'Number', 'Number', 'Number']
-    ]
-  );
 
-  if (!this._doStroke && !this._doFill) {
+  if (!this._renderer._doStroke && !this._renderer._doFill) {
     return this;
   }
-  if(this._graphics.isP3D){
-    this._graphics.triangle(
-      arguments[0],
-      arguments[1],
-      arguments[2],
-      arguments[3],
-      arguments[4],
-      arguments[5],
-      arguments[6],
-      arguments[7],
-      arguments[8]
-      );
-  } else {
-    this._graphics.triangle(
-     arguments[0],
-     arguments[1],
-     arguments[2],
-     arguments[3],
-     arguments[4],
-     arguments[5]
-    );
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
   }
+  this._renderer.triangle(args);
   return this;
 };
 

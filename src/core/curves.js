@@ -13,15 +13,17 @@ require('./error_helpers');
 
 var bezierDetail = 20;
 var curveDetail = 20;
-p5.prototype._curveTightness = 0;
 
 /**
- * Draws a Bezier curve on the screen. These curves are defined by a series
- * of anchor and control points. The first two parameters specify the first
- * anchor point and the last two parameters specify the other anchor point.
- * The middle parameters specify the control points which define the shape
- * of the curve. Bezier curves were developed by French engineer Pierre
- * Bezier.
+ * Draws a cubic Bezier curve on the screen. These curves are defined by a
+ * series of anchor and control points. The first two parameters specify
+ * the first anchor point and the last two parameters specify the other
+ * anchor point, which become the first and last points on the curve. The
+ * middle parameters specify the two control points which define the shape
+ * of the curve. Approximately speaking, control points "pull" the curve
+ * towards them.<br /><br />Bezier curves were developed by French
+ * automotive engineer Pierre Bezier, and are commonly used in computer
+ * graphics to define gently sloping curves. See also curve().
  *
  * @method bezier
  * @param  {Number} x1 x-coordinate for the first anchor point
@@ -44,19 +46,70 @@ p5.prototype._curveTightness = 0;
  * bezier(85, 20, 10, 10, 90, 90, 15, 80);
  * </code>
  * </div>
+ * @alt
+ * stretched black s-shape in center with orange lines extending from end points.
+ * stretched black s-shape with 10 5x5 white ellipses along the shape.
+ * stretched black s-shape with 7 5x5 ellipses and orange lines along the shape.
+ * stretched black s-shape with 17 small orange lines extending from under shape.
+ * horseshoe shape with orange ends facing left and black curved center.
+ * horseshoe shape with orange ends facing left and black curved center.
+ * Line shaped like right-facing arrow,points move with mouse-x and warp shape.
+ * horizontal line that hooks downward on the right and 13 5x5 ellipses along it.
+ * right curving line mid-right of canvas with 7 short lines radiating from it.
  */
-p5.prototype.bezier = function(x1, y1, x2, y2, x3, y3, x4, y4) {
-  this._validateParameters(
-    'bezier',
-    arguments,
-    [ 'Number', 'Number', 'Number', 'Number',
-      'Number', 'Number', 'Number', 'Number' ]
-  );
-
-  if (!this._doStroke) {
+/**
+ * @method bezier
+ * @param  {Number} z1 z-coordinate for the first anchor point
+ * @param  {Number} z2 z-coordinate for the first control point
+ * @param  {Number} z3 z-coordinate for the first anchor point
+ * @param  {Number} z4 z-coordinate for the first control point
+ * @return {p5.Renderer3D}   [description]
+ * @example
+ * <div>
+ * <code>
+ *background(0, 0, 0);
+ *noFill();
+ *stroke(255);
+ *bezier(250,250,0, 100,100,0, 100,0,0, 0,100,0);
+ * </code>
+ * </div>
+*/
+p5.prototype.bezier = function() {
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
+  if(this._renderer.isP3D){
+    this._validateParameters(
+      'bezier',
+      args,
+      ['Number', 'Number', 'Number',
+      'Number', 'Number', 'Number',
+      'Number', 'Number', 'Number',
+      'Number', 'Number', 'Number'
+      ]
+    );
+  } else{
+    this._validateParameters(
+      'bezier',
+      args,
+      [ 'Number', 'Number', 'Number', 'Number',
+        'Number', 'Number', 'Number', 'Number' ]
+    );
+  }
+  if (!this._renderer._doStroke && !this._renderer._doFill) {
     return this;
   }
-  this._graphics.bezier(x1, y1, x2, y2, x3, y3, x4, y4);
+  if (this._renderer.isP3D){
+    args.push(bezierDetail);//adding value of bezier detail to the args array
+    this._renderer.bezier(args);
+  } else{
+    this._renderer.bezier(args[0],args[1],
+      args[2],args[3],
+      args[4],args[5],
+      args[6],args[7]);
+  }
+
   return this;
 };
 
@@ -75,6 +128,10 @@ p5.prototype.bezier = function(x1, y1, x2, y2, x3, y3, x4, y4) {
  * bezier(85, 20, 10, 10, 90, 90, 15, 80);
  * </code>
  * </div>
+ *
+ * @alt
+ * stretched black s-shape with 7 5x5 ellipses and orange lines along the shape.
+ *
  */
 p5.prototype.bezierDetail = function(d) {
   bezierDetail = d;
@@ -82,11 +139,10 @@ p5.prototype.bezierDetail = function(d) {
 };
 
 /**
- * Calculate a point on the Bezier Curve
- *
- * Evaluates the Bezier at point t for points a, b, c, d.
- * The parameter t varies between 0 and 1, a and d are points
+ * Evaluates the Bezier at position t for points a, b, c, d.
+ * The parameters a and d are the first and last points
  * on the curve, and b and c are the control points.
+ * The final parameter t varies between 0 and 1.
  * This can be done once with the x coordinates and a second time
  * with the y coordinates to get the location of a bezier curve at t.
  *
@@ -96,22 +152,28 @@ p5.prototype.bezierDetail = function(d) {
  * @param {Number} c coordinate of second control point
  * @param {Number} d coordinate of second point on the curve
  * @param {Number} t value between 0 and 1
- * @return {Number} the value of the Bezier at point t
+ * @return {Number} the value of the Bezier at position t
  * @example
  * <div>
  * <code>
  * noFill();
- * bezier(85, 20, 10, 10, 90, 90, 15, 80);
+ * x1 = 85, x2 = 10, x3 = 90, x4 = 15;
+ * y1 = 20, y2 = 10, y3 = 90, y4 = 80;
+ * bezier(x1, y1, x2, y2, x3, y3, x4, y4);
  * fill(255);
  * steps = 10;
  * for (i = 0; i <= steps; i++) {
  *   t = i / steps;
- *   x = bezierPoint(85, 10, 90, 15, t);
- *   y = bezierPoint(20, 10, 90, 80, t);
+ *   x = bezierPoint(x1, x2, x3, x4, t);
+ *   y = bezierPoint(y1, y2, y3, y4, t);
  *   ellipse(x, y, 5, 5);
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * stretched black s-shape with 17 small orange lines extending from under shape.
+ *
  */
 p5.prototype.bezierPoint = function(a, b, c, d, t) {
   var adjustedT = 1-t;
@@ -122,11 +184,10 @@ p5.prototype.bezierPoint = function(a, b, c, d, t) {
 };
 
 /**
- * Calculates the tangent of a point on a Bezier curve
- *
- * Evaluates the tangent at point t for points a, b, c, d.
- * The parameter t varies between 0 and 1, a and d are points
- * on the curve, and b and c are the control points
+ * Evaluates the tangent to the Bezier at position t for points a, b, c, d.
+ * The parameters a and d are the first and last points
+ * on the curve, and b and c are the control points.
+ * The final parameter t varies between 0 and 1.
  *
  * @method bezierTangent
  * @param {Number} a coordinate of first point on the curve
@@ -134,7 +195,7 @@ p5.prototype.bezierPoint = function(a, b, c, d, t) {
  * @param {Number} c coordinate of second control point
  * @param {Number} d coordinate of second point on the curve
  * @param {Number} t value between 0 and 1
- * @return {Number} the tangent at point t
+ * @return {Number} the tangent at position t
  * @example
  * <div>
  * <code>
@@ -182,6 +243,10 @@ p5.prototype.bezierPoint = function(a, b, c, d, t) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * s-shaped line with 17 short orange lines extending from underside of shape
+ *
  */
 p5.prototype.bezierTangent = function(a, b, c, d, t) {
   var adjustedT = 1-t;
@@ -194,11 +259,12 @@ p5.prototype.bezierTangent = function(a, b, c, d, t) {
 };
 
 /**
- * Draws a curved line on the screen. The first and second parameters specify
- * the beginning control point and the last two parameters specify the ending
- * control point. The middle parameters specify the start and stop of the
- * curve. Longer curves can be created by putting a series of curve()
- * functions together or using curveVertex(). An additional function called
+ * Draws a curved line on the screen between two points, given as the
+ * middle four parameters. The first two parameters are a control point, as
+ * if the curve came from this point even though it's not drawn. The last
+ * two parameters similarly describe the other control point. <br /><br />
+ * Longer curves can be created by putting a series of curve() functions
+ * together or using curveVertex(). An additional function called
  * curveTightness() provides control for the visual quality of the curve.
  * The curve() function is an implementation of Catmull-Rom splines.
  *
@@ -224,19 +290,84 @@ p5.prototype.bezierTangent = function(a, b, c, d, t) {
  * curve(73, 24, 73, 61, 15, 65, 15, 65);
  * </code>
  * </div>
+ * <div>
+ * <code>
+ * // Define the curve points as JavaScript objects
+ * p1 = {x: 5, y: 26}, p2 = {x: 73, y: 24}
+ * p3 = {x: 73, y: 61}, p4 = {x: 15, y: 65}
+ * noFill();
+ * stroke(255, 102, 0);
+ * curve(p1.x, p1.y, p1.x, p1.y, p2.x, p2.y, p3.x, p3.y)
+ * stroke(0);
+ * curve(p1.x, p1.y, p2.x, p2.y, p3.x, p3.y, p4.x, p4.y)
+ * stroke(255, 102, 0);
+ * curve(p2.x, p2.y, p3.x, p3.y, p4.x, p4.y, p4.x, p4.y)
+ * </code>
+ * </div>
+ *
+ * @alt
+ * horseshoe shape with orange ends facing left and black curved center.
+ * horseshoe shape with orange ends facing left and black curved center.
+ *
  */
-p5.prototype.curve = function(x1, y1, x2, y2, x3, y3, x4, y4) {
-  this._validateParameters(
-    'curve',
-    arguments,
-    [ 'Number', 'Number', 'Number', 'Number',
-      'Number', 'Number', 'Number', 'Number' ]
-  );
-
-  if (!this._doStroke) {
-    return;
+/**
+ * @method curve
+ * @param  {Number} z1 z-coordinate for the beginning control point
+ * @param  {Number} z2 z-coordinate for the first point
+ * @param  {Number} z3 z-coordinate for the second point
+ * @param  {Number} z4 z-coordinate for the ending control point
+ * @return {Object}    the p5 object
+ * @example
+ * <div>
+ * <code>
+ * noFill();
+ * stroke(255, 102, 0);
+ * curve(5,26,0, 5,26,0, 73,24,0, 73,61,0);
+ * stroke(0);
+ * curve(5,26,0, 73,24,0, 73,61,0, 15,65,0);
+ * stroke(255, 102, 0);
+ * curve(73,24,0, 73,61,0, 15,65,0, 15,65,0);
+ * </code>
+ * </div>
+ *
+ * @alt
+ * curving black and orange lines.
+ */
+p5.prototype.curve = function() {
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
   }
-  this._graphics.curve(x1, y1, x2, y2, x3, y3, x4, y4);
+  if(this._renderer.isP3D){
+    this._validateParameters(
+      'curve',
+      args,
+      ['Number', 'Number', 'Number',
+      'Number', 'Number', 'Number',
+      'Number', 'Number', 'Number',
+      'Number', 'Number', 'Number'
+      ]
+    );
+  } else{
+    this._validateParameters(
+      'curve',
+      args,
+      [ 'Number', 'Number', 'Number', 'Number',
+        'Number', 'Number', 'Number', 'Number' ]
+    );
+  }
+  if (!this._renderer._doStroke) {
+    return this;
+  }
+  if (this._renderer.isP3D){
+    args.push(curveDetail);
+    this._renderer.curve(args);
+  } else{
+    this._renderer.curve(args[0],args[1],
+      args[2],args[3],
+      args[4],args[5],
+      args[6],args[7]);
+  }
   return this;
 };
 
@@ -255,6 +386,10 @@ p5.prototype.curve = function(x1, y1, x2, y2, x3, y3, x4, y4) {
  * curve(5, 26, 5, 26, 73, 24, 73, 61);
  * </code>
  * </div>
+ *
+ * @alt
+ * white arch shape in top-mid canvas.
+ *
  */
 p5.prototype.curveDetail = function(d) {
   curveDetail = d;
@@ -298,15 +433,16 @@ p5.prototype.curveDetail = function(d) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * Line shaped like right-facing arrow,points move with mouse-x and warp shape.
  */
 p5.prototype.curveTightness = function (t) {
-  this._setProperty('_curveTightness', t);
+  this._renderer._curveTightness = t;
 };
 
 /**
- * Calculate a point on the Curve
- *
- * Evaluates the Bezier at point t for points a, b, c, d.
+ * Evaluates the curve at position t for points a, b, c, d.
  * The parameter t varies between 0 and 1, a and d are points
  * on the curve, and b and c are the control points.
  * This can be done once with the x coordinates and a second time
@@ -318,7 +454,7 @@ p5.prototype.curveTightness = function (t) {
  * @param {Number} c coordinate of second control point
  * @param {Number} d coordinate of second point on the curve
  * @param {Number} t value between 0 and 1
- * @return {Number} bezier value at point t
+ * @return {Number} bezier value at position t
  * @example
  * <div>
  * <code>
@@ -339,8 +475,10 @@ p5.prototype.curveTightness = function (t) {
  * }
  * </code>
  * </div>
+ *
+ *line hooking down to right-bottom with 13 5x5 white ellipse points
  */
-p5.prototype.curvePoint = function(a, b,c, d, t) {
+p5.prototype.curvePoint = function(a, b, c, d, t) {
   var t3 = t*t*t,
     t2 = t*t,
     f1 = -0.5 * t3 + t2 - 0.5 * t,
@@ -351,11 +489,9 @@ p5.prototype.curvePoint = function(a, b,c, d, t) {
 };
 
 /**
- * Calculates the tangent of a point on a curve
- *
- * Evaluates the tangent at point t for points a, b, c, d.
- * The parameter t varies between 0 and 1, a and d are points
- * on the curve, and b and c are the control points
+ * Evaluates the tangent to the curve at position t for points a, b, c, d.
+ * The parameter t varies between 0 and 1, a and d are points on the curve,
+ * and b and c are the control points.
  *
  * @method curveTangent
  * @param {Number} a coordinate of first point on the curve
@@ -363,7 +499,7 @@ p5.prototype.curvePoint = function(a, b,c, d, t) {
  * @param {Number} c coordinate of second control point
  * @param {Number} d coordinate of second point on the curve
  * @param {Number} t value between 0 and 1
- * @return {Number} the tangent at point t
+ * @return {Number} the tangent at position t
  * @example
  * <div>
  * <code>
@@ -383,6 +519,9 @@ p5.prototype.curvePoint = function(a, b,c, d, t) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ *right curving line mid-right of canvas with 7 short lines radiating from it.
  */
 p5.prototype.curveTangent = function(a, b,c, d, t) {
   var t2 = t*t,

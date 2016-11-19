@@ -8,22 +8,28 @@ var p5 = require('./core');
 var constants = require('./constants');
 require('./p5.Graphics');
 require('./p5.Renderer2D');
-require('../3d/p5.Renderer3D');
+require('../webgl/p5.RendererGL');
+var defaultId = 'defaultCanvas0'; // this gets set again in createCanvas
 
 /**
  * Creates a canvas element in the document, and sets the dimensions of it
  * in pixels. This method should be called only once at the start of setup.
  * Calling createCanvas more than once in a sketch will result in very
  * unpredicable behavior. If you want more than one drawing canvas
- * you could use createGraphics (hidden by default but it can be shown).<br>
+ * you could use createGraphics (hidden by default but it can be shown).
+ * <br><br>
  * The system variables width and height are set by the parameters passed
  * to this function. If createCanvas() is not used, the window will be
  * given a default size of 100x100 pixels.
+ * <br><br>
+ * For more ways to position the canvas, see the
+ * <a href='https://github.com/processing/p5.js/wiki/Positioning-your-canvas'>
+ * positioning the canvas</a> wiki page.
  *
  * @method createCanvas
  * @param  {Number} w width of the canvas
  * @param  {Number} h height of the canvas
- * @param  optional:{String} renderer 'p2d' | 'webgl'
+ * @param  {Constant} [renderer] P2D or WEBGL
  * @return {Object} canvas generated
  * @example
  * <div>
@@ -35,6 +41,10 @@ require('../3d/p5.Renderer3D');
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * Black line extending from top-left of canvas to bottom right.
+ *
  */
 
 p5.prototype.createCanvas = function(w, h, renderer) {
@@ -50,17 +60,22 @@ p5.prototype.createCanvas = function(w, h, renderer) {
   }
 
   if(r === constants.WEBGL){
-    c = document.getElementById('defaultCanvas');
+    c = document.getElementById(defaultId);
     if(c){ //if defaultCanvas already exists
       c.parentNode.removeChild(c); //replace the existing defaultCanvas
     }
     c = document.createElement('canvas');
-    c.id = 'defaultCanvas';
+    c.id = defaultId;
   }
   else {
     if (isDefault) {
       c = document.createElement('canvas');
-      c.id = 'defaultCanvas';
+      var i = 0;
+      while (document.getElementById('defaultCanvas'+i)) {
+        i++;
+      }
+      defaultId = 'defaultCanvas'+i;
+      c.id = defaultId;
     } else { // resize the default canvas if new one is created
       c = this.canvas;
     }
@@ -68,7 +83,7 @@ p5.prototype.createCanvas = function(w, h, renderer) {
 
   // set to invisible if still in setup (to prevent flashing with manipulate)
   if (!this._setupDone) {
-    c.className += ' p5_hidden'; // tag to show later
+    c.dataset.hidden = true; // tag to show later
     c.style.visibility='hidden';
   }
 
@@ -83,26 +98,28 @@ p5.prototype.createCanvas = function(w, h, renderer) {
   // Init our graphics renderer
   //webgl mode
   if (r === constants.WEBGL) {
-    this._setProperty('_graphics', new p5.Renderer3D(c, this, true));
+    this._setProperty('_renderer', new p5.RendererGL(c, this, true));
     this._isdefaultGraphics = true;
   }
   //P2D mode
   else {
     if (!this._isdefaultGraphics) {
-      this._setProperty('_graphics', new p5.Renderer2D(c, this, true));
+      this._setProperty('_renderer', new p5.Renderer2D(c, this, true));
       this._isdefaultGraphics = true;
     }
   }
-  this._graphics.resize(w, h);
-  this._graphics._applyDefaults();
-  return this._graphics;
+  this._renderer.resize(w, h);
+  this._renderer._applyDefaults();
+  if (isDefault) { // only push once
+    this._elements.push(this._renderer);
+  }
+  return this._renderer;
 };
 
 /**
- * Resizes the canvas to given width and height. Note that the
- * canvas will be cleared so anything drawn previously in setup
- * or draw will disappear on resize. Setup will not be called
- * again.
+ * Resizes the canvas to given width and height. The canvas will be cleared
+ * and draw will be called immediately, allowing the sketch to re-render itself
+ * in the resized canvas.
  * @method resizeCanvas
  * @example
  * <div class="norender"><code>
@@ -118,11 +135,27 @@ p5.prototype.createCanvas = function(w, h, renderer) {
  *   resizeCanvas(windowWidth, windowHeight);
  * }
  * </code></div>
+ *
+ * @alt
+ * No image displayed.
+ *
  */
 p5.prototype.resizeCanvas = function (w, h, noRedraw) {
-  if (this._graphics) {
-    this._graphics.resize(w, h);
-    this._graphics._applyDefaults();
+  if (this._renderer) {
+
+    // save canvas properties
+    var props = {};
+    for (var key in this.drawingContext) {
+      var val = this.drawingContext[key];
+      if (typeof val !== 'object' && typeof val !== 'function') {
+        props[key] = val;
+      }
+    }
+    this._renderer.resize(w, h);
+    // reset canvas properties
+    for (var savedKey in props) {
+      this.drawingContext[savedKey] = props[savedKey];
+    }
     if (!noRedraw) {
       this.redraw();
     }
@@ -142,6 +175,10 @@ p5.prototype.resizeCanvas = function (w, h, noRedraw) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * no image displayed
+ *
  */
 p5.prototype.noCanvas = function() {
   if (this.canvas) {
@@ -157,7 +194,7 @@ p5.prototype.noCanvas = function() {
  * @method createGraphics
  * @param  {Number} w width of the offscreen graphics buffer
  * @param  {Number} h height of the offscreen graphics buffer
- * @param {String} renderer either 'p2d' or 'webgl'.
+ * @param  {Constant} [renderer] P2D or WEBGL
  * undefined defaults to p2d
  * @return {Object} offscreen graphics buffer
  * @example
@@ -178,6 +215,10 @@ p5.prototype.noCanvas = function() {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * 4 grey squares alternating light and dark grey. White quarter circle mid-left.
+ *
  */
 p5.prototype.createGraphics = function(w, h, renderer){
   return new p5.Graphics(w, h, renderer, this);
@@ -218,7 +259,7 @@ p5.prototype.createGraphics = function(w, h, renderer){
  * </ul>
  *
  * @method blendMode
- * @param  {String/Constant} mode blend mode to set for canvas
+ * @param  {Constant} mode blend mode to set for canvas
  * @example
  * <div>
  * <code>
@@ -240,6 +281,10 @@ p5.prototype.createGraphics = function(w, h, renderer){
  * line(75, 25, 25, 75);
  * </code>
  * </div>
+ * @alt
+ * translucent image thick red & blue diagonal rounded lines intersecting center
+ * Thick red & blue diagonal rounded lines intersecting center. dark at overlap
+ *
  */
 p5.prototype.blendMode = function(mode) {
   if (mode === constants.BLEND || mode === constants.DARKEST ||
@@ -250,7 +295,7 @@ p5.prototype.blendMode = function(mode) {
     mode === constants.SOFT_LIGHT || mode === constants.DODGE ||
     mode === constants.BURN || mode === constants.ADD ||
     mode === constants.NORMAL) {
-    this._graphics.blendMode(mode);
+    this._renderer.blendMode(mode);
   } else {
     throw new Error('Mode '+mode+' not recognized.');
   }

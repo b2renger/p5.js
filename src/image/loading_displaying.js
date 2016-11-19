@@ -16,11 +16,16 @@ require('../core/error_helpers');
 
 /**
  * Loads an image from a path and creates a p5.Image from it.
- *
+ * <br><br>
  * The image may not be immediately available for rendering
  * If you want to ensure that the image is ready before doing
- * anything with it you can do perform those operations in the
- * callback, or place the loadImage() call in preload().
+ * anything with it, place the loadImage() call in preload().
+ * You may also supply a callback function to handle the image when it's ready.
+ * <br><br>
+ * The path to the image should be relative to the HTML file
+ * that links in your sketch. Loading an from a URL or other
+ * remote location may be blocked due to your browser's built-in
+ * security.
  *
  * @method loadImage
  * @param  {String} path Path of the image to be loaded
@@ -52,25 +57,36 @@ require('../core/error_helpers');
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * image of the underside of a white umbrella and grided ceililng above
+ * image of the underside of a white umbrella and grided ceililng above
+ *
  */
 p5.prototype.loadImage = function(path, successCallback, failureCallback) {
   var img = new Image();
   var pImg = new p5.Image(1, 1, this);
+  var decrementPreload = p5._getDecrementPreload.apply(this, arguments);
 
   img.onload = function() {
     pImg.width = pImg.canvas.width = img.width;
     pImg.height = pImg.canvas.height = img.height;
 
     // Draw the image into the backing canvas of the p5.Image
-    pImg.canvas.getContext('2d').drawImage(img, 0, 0);
+    pImg.drawingContext.drawImage(img, 0, 0);
 
     if (typeof successCallback === 'function') {
       successCallback(pImg);
     }
+    if (decrementPreload && (successCallback !== decrementPreload)) {
+      decrementPreload();
+    }
   };
   img.onerror = function(e) {
     p5._friendlyFileLoadError(0,img.src);
-    if (typeof failureCallback === 'function') {
+    // don't get failure callback mixed up with decrementPreload
+    if ((typeof failureCallback === 'function') &&
+      (failureCallback !== decrementPreload)) {
       failureCallback(e);
     }
   };
@@ -91,14 +107,34 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
 };
 
 /**
+ * Validates clipping params. Per drawImage spec sWidth and sHight cannot be
+ * negative or greater than image intrinsic width and height
+ * @private
+ * @param {Number} sVal
+ * @param {Number} iVal
+ * @returns {Number}
+ * @private
+ */
+function _sAssign(sVal, iVal) {
+  if (sVal > 0 && sVal < iVal) {
+    return sVal;
+  }
+  else {
+    return iVal;
+  }
+}
+
+/**
  * Draw an image to the main canvas of the p5js sketch
  *
  * @method image
- * @param  {p5.Image} image    the image to display
- * @param  {Number}   [x=0]    x-coordinate of the image
- * @param  {Number}   [y=0]    y-coordinate of the image
- * @param  {Number}   [width]  width to display the image
- * @param  {Number}   [height] height to display the image
+ * @param  {p5.Image} img    the image to display
+ * @param  {Number}   x      the x-coordinate at which to place the top-left
+ *                           corner of the source image
+ * @param  {Number}   y      the y-coordinate at which to place the top-left
+ *                           corner of the source image
+ * @param  {Number}   width  the width to draw the image
+ * @param  {Number}   height the height to draw the image
  * @example
  * <div>
  * <code>
@@ -108,6 +144,8 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
  * }
  * function setup() {
  *   image(img, 0, 0);
+ *   image(img, 0, 0, 100, 100);
+ *   image(img, 0, 0, 100, 100, 0, 0, 100, 100);
  * }
  * </code>
  * </div>
@@ -121,37 +159,89 @@ p5.prototype.loadImage = function(path, successCallback, failureCallback) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * image of the underside of a white umbrella and grided ceiling above
+ * image of the underside of a white umbrella and grided ceiling above
+ *
  */
-p5.prototype.image = function(img, x, y, width, height) {
-  // Temporarily disabling until options for p5.Graphics are added.
-  // this._validateParameters(
-  //   'image',
-  //   arguments,
-  //   [
-  //     ['p5.Image', 'Number', 'Number'],
-  //     ['p5.Image', 'Number', 'Number', 'Number', 'Number']
-  //   ]
-  // );
+/**
+ * @method image
+ * @param  {p5.Image} img
+ * @param  {Number}   dx     the -xcoordinate in the destination canvas at
+ *                           which to place the top-left corner of the
+ *                           source image
+ * @param  {Number}   dy     the y-coordinate in the destination canvas at
+ *                           which to place the top-left corner of the
+ *                           source image
+ * @param  {Number}   dWidth the width to draw the image in the destination
+ *                           canvas
+ * @param  {Number}   dHeight the height to draw the image in the destination
+ *                            canvas
+ * @param  {Number}   sx     the x-coordinate of the top left corner of the
+ *                           sub-rectangle of the source image to draw into
+ *                           the destination canvas
+ * @param  {Number}   sy     the y-coordinate of the top left corner of the
+ *                           sub-rectangle of the source image to draw into
+ *                           the destination canvas
+ * @param {Number}    [sWidth] the width of the sub-rectangle of the
+ *                           source image to draw into the destination
+ *                           canvas
+ * @param {Number}    [sHeight] the height of the sub-rectangle of the
+ *                            source image to draw into the destination context
+ */
+p5.prototype.image =
+  function(img, dx, dy, dWidth, dHeight, sx, sy, sWidth, sHeight) {
+  // set defaults per spec: https://goo.gl/3ykfOq
+  if (arguments.length <= 5) {
+    dx = sx || 0;
+    dy = sy || 0;
+    sx = 0;
+    sy = 0;
+    if (img.elt && img.elt.videoWidth && !img.canvas) { // video no canvas
+      var actualW = img.elt.videoWidth;
+      var actualH = img.elt.videoHeight;
+      dWidth = sWidth || img.elt.width;
+      dHeight = sHeight || img.elt.width*actualH/actualW;
+      sWidth = actualW;
+      sHeight = actualH;
+    } else {
+      dWidth = sWidth || img.width;
+      dHeight = sHeight || img.height;
+      sWidth = img.width;
+      sHeight = img.height;
+    }
+  } else if (arguments.length === 9) {
+    sx = sx || 0;
+    sy = sy || 0;
+    sWidth = _sAssign(sWidth, img.width);
+    sHeight = _sAssign(sHeight, img.height);
 
-  // set defaults
-  x = x || 0;
-  y = y || 0;
-  width = width || img.width;
-  height = height || img.height;
-  var vals = canvas.modeAdjust(x, y, width, height, this._imageMode);
+    dx = dx || 0;
+    dy = dy || 0;
+    dWidth = dWidth || img.width;
+    dHeight = dHeight || img.height;
+  } else {
+    throw 'Wrong number of arguments to image()';
+  }
+
+  var vals = canvas.modeAdjust(dx, dy, dWidth, dHeight,
+    this._renderer._imageMode);
+
   // tint the image if there is a tint
-  this._graphics.image(img, vals.x, vals.y, vals.w, vals.h);
+  this._renderer.image(img, vals.x, vals.y, vals.w,
+    vals.h, sx, sy, sWidth, sHeight);
 };
 
 /**
  * Sets the fill value for displaying images. Images can be tinted to
  * specified colors or made transparent by including an alpha value.
- *
+ * <br><br>
  * To apply transparency to an image without affecting its color, use
  * white as the tint color and specify an alpha value. For instance,
  * tint(255, 128) will make an image 50% transparent (assuming the default
  * alpha range of 0-255, which can be changed with colorMode()).
- *
+ * <br><br>
  * The value for the gray parameter must be less than or equal to the current
  * maximum value as specified by colorMode(). The default maximum value is
  * 255.
@@ -206,10 +296,16 @@ p5.prototype.image = function(img, x, y, width, height) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * 2 side by side images of umbrella and ceiling, one image with blue tint
+ * Images of umbrella and ceiling, one half of image with blue tint
+ * 2 side by side images of umbrella and ceiling, one image translucent
+ *
  */
 p5.prototype.tint = function () {
   var c = this.color.apply(this, arguments);
-  this._tint = c.rgba;
+  this._renderer._tint = c.levels;
 };
 
 /**
@@ -232,9 +328,13 @@ p5.prototype.tint = function () {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * 2 side by side images of bricks, left image with blue tint
+ *
  */
 p5.prototype.noTint = function() {
-  this._tint = null;
+  this._renderer._tint = null;
 };
 
 /**
@@ -263,10 +363,10 @@ p5.prototype._getTintedImageCanvas = function(img) {
     var b = pixels[i+2];
     var a = pixels[i+3];
 
-    newPixels[i] = r*this._tint[0]/255;
-    newPixels[i+1] = g*this._tint[1]/255;
-    newPixels[i+2] = b*this._tint[2]/255;
-    newPixels[i+3] = a*this._tint[3]/255;
+    newPixels[i] = r*this._renderer._tint[0]/255;
+    newPixels[i+1] = g*this._renderer._tint[1]/255;
+    newPixels[i+2] = b*this._renderer._tint[2]/255;
+    newPixels[i+3] = a*this._renderer._tint[3]/255;
   }
 
   tmpCtx.putImageData(id, 0, 0);
@@ -280,16 +380,17 @@ p5.prototype._getTintedImageCanvas = function(img) {
  * third parameters of image() as the upper-left corner of the image. If
  * two additional parameters are specified, they are used to set the image's
  * width and height.
- *
+ * <br><br>
  * imageMode(CORNERS) interprets the second and third parameters of image()
  * as the location of one corner, and the fourth and fifth parameters as the
  * opposite corner.
+ * <br><br>
  * imageMode(CENTER) interprets the second and third parameters of image()
  * as the image's center point. If two additional parameters are specified,
  * they are used to set the image's width and height.
  *
  * @method imageMode
- * @param {String} m The mode: either CORNER, CORNERS, or CENTER.
+ * @param {Constant} mode either CORNER, CORNERS, or CENTER
  * @example
  *
  * <div>
@@ -330,12 +431,18 @@ p5.prototype._getTintedImageCanvas = function(img) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * small square image of bricks
+ * horizontal rectangle image of bricks
+ * large square image of bricks
+ *
  */
 p5.prototype.imageMode = function(m) {
   if (m === constants.CORNER ||
     m === constants.CORNERS ||
     m === constants.CENTER) {
-    this._imageMode = m;
+    this._renderer._imageMode = m;
   }
 };
 

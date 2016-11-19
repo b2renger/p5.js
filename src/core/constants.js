@@ -35,6 +35,9 @@ module.exports = {
    * arc(50, 50, 80, 80, 0, HALF_PI);
    * </code></div>
    *
+   * @alt
+   * 80x80 white quarter-circle with curve toward bottom right of canvas.
+   *
    */
   HALF_PI: PI / 2,
   /**
@@ -49,6 +52,10 @@ module.exports = {
    * <div><code>
    * arc(50, 50, 80, 80, 0, PI);
    * </code></div>
+   *
+   * @alt
+   * white half-circle with curve toward bottom of canvas.
+   *
    */
   PI: PI,
   /**
@@ -63,6 +70,9 @@ module.exports = {
    * <div><code>
    * arc(50, 50, 80, 80, 0, QUARTER_PI);
    * </code></div>
+   *
+   * @alt
+   * white eighth-circle rotated about 40 degrees with curve bottom right canvas.
    *
    */
   QUARTER_PI: PI / 4,
@@ -79,6 +89,9 @@ module.exports = {
    * arc(50, 50, 80, 80, 0, TAU);
    * </code></div>
    *
+   * @alt
+   * 80x80 white ellipse shape in center of canvas.
+   *
    */
   TAU: PI * 2,
   /**
@@ -93,6 +106,9 @@ module.exports = {
    * <div><code>
    * arc(50, 50, 80, 80, 0, TWO_PI);
    * </code></div>
+   *
+   * @alt
+   * 80x80 white ellipse shape in center of canvas.
    *
    */
   TWO_PI: PI * 2,
@@ -109,11 +125,13 @@ module.exports = {
   TOP: 'top',
   BOTTOM: 'bottom',
   BASELINE: 'alphabetic',
-  POINTS: 'points',
-  LINES: 'lines',
-  TRIANGLES: 'triangles',
-  TRIANGLE_FAN: 'triangles_fan',
-  TRIANGLE_STRIP: 'triangles_strip',
+  POINTS: 0x0000,
+  LINES: 0x0001,
+  LINE_STRIP: 0x0003,
+  LINE_LOOP: 0x0002,
+  TRIANGLES: 0x0004,
+  TRIANGLE_FAN: 0x0006,
+  TRIANGLE_STRIP: 0x0005,
   QUADS: 'quads',
   QUAD_STRIP: 'quad_strip',
   CLOSE: 'close',

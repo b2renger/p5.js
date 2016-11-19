@@ -102,6 +102,10 @@ p5.Table = function (rows) {
 	* }
 	* </code>
 	* </div>
+	*
+ * @alt
+ * no image displayed
+ *
  */
 p5.Table.prototype.addRow = function(row) {
   // make sure it is a valid TableRow
@@ -152,6 +156,10 @@ p5.Table.prototype.addRow = function(row) {
 	* }
 	* </code>
 	* </div>
+	*
+    * @alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.removeRow = function(id) {
   this.rows[id].table = null; // remove reference to table
@@ -197,6 +205,10 @@ p5.Table.prototype.removeRow = function(id) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.getRow = function(r) {
   return this.rows[r];
@@ -241,6 +253,10 @@ p5.Table.prototype.getRow = function(r) {
 	* }
 	* </code>
 	* </div>
+	*
+    * @alt
+    * no image displayed
+    *
  */
 p5.Table.prototype.getRows = function() {
   return this.rows;
@@ -286,6 +302,10 @@ p5.Table.prototype.getRows = function() {
 	* }
 	* </code>
 	* </div>
+	*
+ * @alt
+ * no image displayed
+ *
  */
 p5.Table.prototype.findRow = function(value, column) {
   // try the Object
@@ -353,6 +373,10 @@ p5.Table.prototype.findRow = function(value, column) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.findRows = function(value, column) {
   var ret = [];
@@ -407,17 +431,50 @@ p5.Table.prototype.matchRow = function(regexp, column) {
 };
 
 /**
- *  Finds the first row in the Table that matches the regular
- *  expression provided, and returns a reference to that row.
- *  Even if multiple rows are possible matches, only the first
- *  matching row is returned. The column to search may be specified
- *  by either its ID or title.
+ *  Finds the rows in the Table that match the regular expression provided,
+ *  and returns references to those rows. Returns an array, so for must be
+ *  used to iterate through all the rows, as shown in the example. The
+ *  column to search may be specified by either its ID or title.
  *
  *  @method  matchRows
  *  @param  {String} regexp The regular expression to match
  *  @param  {String|Number} [column] The column ID (number) or
  *                                   title (string)
  *  @return {Array}        An Array of TableRow objects
+ *  @example
+ *  var table;
+ *
+ *  function setup() {
+ *
+ *    table = new p5.Table();
+ *
+ *    table.addColumn('name');
+ *    table.addColumn('type');
+ *
+ *    var newRow = table.addRow();
+ *    newRow.setString('name', 'Lion');
+ *    newRow.setString('type', 'Mammal');
+ *
+ *    newRow = table.addRow();
+ *    newRow.setString('name', 'Snake');
+ *    newRow.setString('type', 'Reptile');
+ *
+ *    newRow = table.addRow();
+ *    newRow.setString('name', 'Mosquito');
+ *    newRow.setString('type', 'Insect');
+ *
+ *    newRow = table.addRow();
+ *    newRow.setString('name', 'Lizard');
+ *    newRow.setString('type', 'Reptile');
+ *
+ *    var rows = table.matchRows('R.*', 'type');
+ *    for (var i = 0; i < rows.length; i++) {
+ *      print(rows[i].getString('name') + ': ' + rows[i].getString('type'));
+ *    }
+ *  }
+ *  // Sketch prints:
+ *  // Snake: Reptile
+ *  // Lizard: Reptile
  */
 p5.Table.prototype.matchRows = function(regexp, column) {
   var ret = [];
@@ -474,6 +531,10 @@ p5.Table.prototype.matchRows = function(regexp, column) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.getColumn = function(value) {
   var ret = [];
@@ -521,6 +582,10 @@ p5.Table.prototype.getColumn = function(value) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.clearRows = function() {
   delete this.rows;
@@ -568,6 +633,10 @@ p5.Table.prototype.clearRows = function() {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.addColumn = function(title) {
   var t = title || null;
@@ -722,6 +791,10 @@ p5.Table.prototype.trim = function(column) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.removeColumn = function(c) {
   var cString;
@@ -792,6 +865,10 @@ p5.Table.prototype.removeColumn = function(c) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.set = function(row, column, value) {
   this.rows[row].set(column, value);
@@ -835,9 +912,12 @@ p5.Table.prototype.set = function(row, column, value) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
  */
 p5.Table.prototype.setNum = function(row, column, value){
-  this.rows[row].set(column, value);
+  this.rows[row].setNum(column, value);
 };
 
 
@@ -853,7 +933,7 @@ p5.Table.prototype.setNum = function(row, column, value){
  * @param {String} value  value to assign
  */
 p5.Table.prototype.setString = function(row, column, value){
-  this.rows[row].set(column, value);
+  this.rows[row].setString(column, value);
 };
 
 /**
@@ -894,6 +974,10 @@ p5.Table.prototype.setString = function(row, column, value){
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.get = function(row, column) {
   return this.rows[row].get(column);
@@ -935,6 +1019,10 @@ p5.Table.prototype.get = function(row, column) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.getNum = function(row, column) {
   return this.rows[row].getNum(column);
@@ -979,6 +1067,10 @@ p5.Table.prototype.getNum = function(row, column) {
 	* }
 	* </code>
 	* </div>
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.getString = function(row, column) {
   return this.rows[row].getString(column);
@@ -1021,7 +1113,10 @@ p5.Table.prototype.getString = function(row, column) {
 	* }
 	* </code>
 	* </div>
-
+	*
+ 	*@alt
+ 	* no image displayed
+ 	*
  */
 p5.Table.prototype.getObject = function (headerColumn) {
   var tableObject = {};

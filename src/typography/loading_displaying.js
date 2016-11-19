@@ -21,10 +21,10 @@ require('../core/error_helpers');
  * with textSize(). Change the color of the text with the fill() function.
  * Change the outline of the text with the stroke() and strokeWeight()
  * functions.
- *
+ * <br><br>
  * The text displays in relation to the textAlign() function, which gives the
  * option to draw to the left, right, and center of the coordinates.
- *
+ * <br><br>
  * The x2 and y2 parameters define a rectangular area to display within and
  * may only be used with string data. When these parameters are specified,
  * they are interpreted based on the current rectMode() setting. Text that
@@ -58,20 +58,28 @@ require('../core/error_helpers');
  * text(s, 10, 10, 70, 80); // Text wraps within text box
  * </code>
  * </div>
+ *
+ * @alt
+ *'word' displayed 3 times going from black, blue to translucent blue
+ * The quick brown fox jumped over the lazy dog.
+ *
  */
 p5.prototype.text = function(str, x, y, maxWidth, maxHeight) {
-
+  var args = new Array(arguments.length);
+  for (var i = 0; i < args.length; ++i) {
+    args[i] = arguments[i];
+  }
   this._validateParameters(
     'text',
-    arguments,
+    args,
     [
       ['*', 'Number', 'Number'],
       ['*', 'Number', 'Number', 'Number', 'Number']
     ]
   );
 
-  return (!(this._doFill || this._doStroke)) ? this :
-    this._graphics.text.apply(this._graphics, arguments);
+  return (!(this._renderer._doFill || this._renderer._doStroke)) ? this :
+    this._renderer.text.apply(this._renderer, arguments);
 };
 
 /**
@@ -79,7 +87,8 @@ p5.prototype.text = function(str, x, y, maxWidth, maxHeight) {
  *
  * @method textFont
  * @param {Object|String} f a font loaded via loadFont(), or a String
- *  representing a browser-based dfault font.
+ * representing a <a href="https://mzl.la/2dOw8WD">web safe font</a> (a font
+ * that is generally available across all systems).
  * @return {Object} this
  * @example
  * <div>
@@ -112,6 +121,10 @@ p5.prototype.text = function(str, x, y, maxWidth, maxHeight) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ *words Font Style Normal displayed normally, Italic in italic and bold in bold
+ *
  */
 p5.prototype.textFont = function(theFont, theSize) {
 
@@ -122,16 +135,16 @@ p5.prototype.textFont = function(theFont, theSize) {
       throw Error('null font passed to textFont');
     }
 
-    this._setProperty('_textFont', theFont);
+    this._renderer._setProperty('_textFont', theFont);
 
     if (theSize) {
 
-      this._setProperty('_textSize', theSize);
-      this._setProperty('_textLeading',
+      this._renderer._setProperty('_textSize', theSize);
+      this._renderer._setProperty('_textLeading',
         theSize * constants._DEFAULT_LEADMULT);
     }
 
-    return this._graphics._applyTextProperties();
+    return this._renderer._applyTextProperties();
   }
 
   return this;

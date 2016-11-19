@@ -34,6 +34,10 @@ var downKeys = {};
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * 50x50 white rect that turns black on keypress.
+ *
  */
 p5.prototype.isKeyPressed = false;
 p5.prototype.keyIsPressed = false; // khan
@@ -59,6 +63,10 @@ p5.prototype.keyIsPressed = false; // khan
  *   text(key, 33,65); // Display last key pressed.
  * }
  * </div></code>
+ *
+ * @alt
+ * canvas displays any key value that is pressed in pink font.
+ *
  */
 p5.prototype.key = '';
 
@@ -66,6 +74,8 @@ p5.prototype.key = '';
  * The variable keyCode is used to detect special keys such as BACKSPACE,
  * DELETE, ENTER, RETURN, TAB, ESCAPE, SHIFT, CONTROL, OPTION, ALT, UP_ARROW,
  * DOWN_ARROW, LEFT_ARROW, RIGHT_ARROW.
+ * You can also check for custom keys by looking up the keyCode of any key
+ * on a site like this: <a href="http://keycode.info/">keycode.info</a>.
  *
  * @property keyCode
  * @example
@@ -85,6 +95,10 @@ p5.prototype.key = '';
  *   return false; // prevent default
  * }
  * </code></div>
+ *
+ * @alt
+ * Grey rect center. turns white when up arrow pressed and black when down
+ *
  */
 p5.prototype.keyCode = 0;
 
@@ -140,12 +154,27 @@ p5.prototype.keyCode = 0;
  *   } else if (keyCode === RIGHT_ARROW) {
  *     value = 0;
  *   }
- *   return false; // prevent any default behavior
  * }
  * </code>
  * </div>
+ * <div class="norender">
+ * <code>
+ * function keyPressed(){
+ *   // Do something
+ *   return false; // prevent any default behaviour
+ * }
+ * </code>
+ *
+ * @alt
+ * black rect center. turns white when key pressed and black when released
+ * black rect center. turns white when left arrow pressed and black when right.
+ *
+ * </div>
  */
 p5.prototype._onkeydown = function (e) {
+  if (downKeys[e.which]) { // prevent multiple firings
+    return;
+  }
   this._setProperty('isKeyPressed', true);
   this._setProperty('keyIsPressed', true);
   this._setProperty('keyCode', e.which);
@@ -189,11 +218,16 @@ p5.prototype._onkeydown = function (e) {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * black rect center. turns white when key pressed and black when pressed again
+ *
  */
 p5.prototype._onkeyup = function (e) {
   var keyReleased = this.keyReleased || window.keyReleased;
   this._setProperty('isKeyPressed', false);
   this._setProperty('keyIsPressed', false);
+  this._setProperty('_lastKeyCodeTyped', null);
   downKeys[e.which] = false;
   //delete this._downKeys[e.which];
   var key = String.fromCharCode(e.which);
@@ -216,11 +250,12 @@ p5.prototype._onkeyup = function (e) {
  * key pressed will be stored in the key variable.
  * <br><br>
  * Because of how operating systems handle key repeats, holding down a key
- * will cause multiple calls to keyTyped(), the rate is set by the operating
- * system and how each computer is configured.<br><br>
- * Browsers may have different default
- * behaviors attached to various key events. To prevent any default
- * behavior for this event, add "return false" to the end of the method.
+ * will cause multiple calls to keyTyped() (and keyReleased() as well). The
+ * rate of repeat is set by the operating system and how each computer is
+ * configured.<br><br>
+ * Browsers may have different default behaviors attached to various key
+ * events. To prevent any default behavior for this event, add "return false"
+ * to the end of the method.
  *
  * @method keyTyped
  * @example
@@ -237,13 +272,22 @@ p5.prototype._onkeyup = function (e) {
  *   } else if (key === 'b') {
  *     value = 0;
  *   }
- *   return false; // prevent any default behavior
+ *   // uncomment to prevent any default behavior
+ *   // return false;
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * black rect center. turns white when 'a' key typed and black when 'b' pressed
+ *
  */
 p5.prototype._onkeypress = function (e) {
+  if (e.which === this._lastKeyCodeTyped) { // prevent multiple firings
+    return;
+  }
   this._setProperty('keyCode', e.which);
+  this._setProperty('_lastKeyCodeTyped', e.which); // track last keyCode
   this._setProperty('key', String.fromCharCode(e.which));
   var keyTyped = this.keyTyped || window.keyTyped;
   if (typeof keyTyped === 'function') {
@@ -255,7 +299,7 @@ p5.prototype._onkeypress = function (e) {
 };
 /**
  * The onblur function is called when the user is no longer focused
- * on the p5 element. Because the keyup events will no fire if the user is
+ * on the p5 element. Because the keyup events will not fire if the user is
  * not focused on the element we must assume all keys currently down have
  * been released.
  */
@@ -264,7 +308,7 @@ p5.prototype._onblur = function (e) {
 };
 
 /**
- * The keyIsDown function checks if the key is currently down, i.e. pressed.
+ * The keyIsDown() function checks if the key is currently down, i.e. pressed.
  * It can be used if you have an object that moves, and you want several keys
  * to be able to affect its behaviour simultaneously, such as moving a
  * sprite diagonally. You can put in any number representing the keyCode of
@@ -301,6 +345,10 @@ p5.prototype._onblur = function (e) {
  *   ellipse(x, y, 50, 50);
  * }
  * </code></div>
+ *
+ * @alt
+ * 50x50 red ellipse moves left, right, up and down with arrow presses.
+ *
  */
 p5.prototype.keyIsDown = function(code) {
   return downKeys[code];

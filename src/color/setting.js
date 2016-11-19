@@ -12,17 +12,6 @@ var p5 = require('../core/core');
 var constants = require('../core/constants');
 require('./p5.Color');
 
-p5.prototype._doStroke = true;
-p5.prototype._doFill = true;
-p5.prototype._strokeSet = false;
-p5.prototype._fillSet = false;
-p5.prototype._colorMode = constants.RGB;
-p5.prototype._colorMaxes = {
-  rgb: [255, 255, 255, 255],
-  hsb: [360, 100, 100, 1],
-  hsl: [360, 100, 100, 1]
-};
-
 /**
  * The background() function sets the color used for the background of the
  * p5.js canvas. The default background is light gray. This function is
@@ -31,17 +20,9 @@ p5.prototype._colorMaxes = {
  * the first frame of animation or if the background need only be set once.
  *
  * @method background
- * @param {Number|String|p5.Color|p5.Image} v1   gray value, red or hue value
- *                                               (depending on the current
- *                                               color mode), color string,
- *                                               p5.Color, or p5.Image
- * @param {Number}                          [v2] green or saturation value
- *                                               (depending on the current
- *                                               color mode)
- * @param {Number}                          [v3] blue or brightness value
- *                                               (depending on the current
- *                                               color mode)
- * @param {Number}                          [a]  opacity of the background
+ * @param {p5.Color} color     any value created by the color() function
+ * @param {Number} [a]         opacity of the background relative to current
+ *                             color range (default is 0-100)
  *
  * @example
  * <div>
@@ -121,12 +102,58 @@ p5.prototype._colorMaxes = {
  * background(color(0, 0, 255));
  * </code>
  * </div>
+ *
+ * @alt
+ * canvas with darkest charcoal grey background.
+ * canvas with yellow background.
+ * canvas with royal blue background.
+ * canvas with red background.
+ * canvas with pink background.
+ * canvas with black background.
+ * canvas with bright green background.
+ * canvas with soft green background.
+ * canvas with red background.
+ * canvas with light purple background.
+ * canvas with blue background.
+ */
+
+/**
+ * @method background
+ * @param {String} colorstring color string, possible formats include: integer
+ *                         rgb() or rgba(), percentage rgb() or rgba(),
+ *                         3-digit hex, 6-digit hex
+ * @param {Number} [a]
+ */
+
+/**
+ * @method background
+ * @param {Number} gray   specifies a value between white and black
+ * @param {Number} [a]
+ */
+
+/**
+ * @method background
+ * @param {Number} v1     red or hue value (depending on the current color
+ *                        mode)
+ * @param {Number} v2     green or saturation value (depending on the current
+ *                        color mode)
+ * @param {Number} v3     blue or brightness value (depending on the current
+ *                        color mode)
+ * @param  {Number} [a]
+ */
+
+/**
+ * @method background
+ * @param {p5.Image} image     image created with loadImage() or createImage(),
+ *                             to set as background
+ *                             (must be same size as the sketch window)
+ * @param  {Number}  [a]
  */
 p5.prototype.background = function() {
   if (arguments[0] instanceof p5.Image) {
     this.image(arguments[0], 0, 0, this.width, this.height);
   } else {
-    this._graphics.background.apply(this._graphics, arguments);
+    this._renderer.background.apply(this._renderer, arguments);
   }
   return this;
 };
@@ -143,32 +170,53 @@ p5.prototype.background = function() {
  * @example
  * <div>
  * <code>
+ * // Clear the screen on mouse press.
+ * function setup() {
+ *   createCanvas(100, 100);
+ * }
+ *
+ * function draw() {
+ *   ellipse(mouseX, mouseY, 20, 20);
+ * }
+ *
+ * function mousePressed() {
+ *   clear();
+ * }
  * </code>
  * </div>
+ *
+ * @alt
+ * 20x20 white ellipses are continually drawn at mouse x and y coordinates.
+ *
  */
+
 p5.prototype.clear = function() {
-  this._graphics.clear();
+  this._renderer.clear();
   return this;
 };
 
 /**
- * Changes the way p5.js interprets color data. By default, the parameters
- * for fill(), stroke(), background(), and color() are defined by values
- * between 0 and 255 using the RGB color model. The colorMode() function is
- * used to switch color systems. Regardless of color system, all value ranges
- * are presumed to be 0–255 unless explicitly set otherwise. That is,
- * for a standard HSB range, one would pass colorMode(HSB, 360, 100, 100, 1).
+ * colorMode() changes the way p5.js interprets color data. By default, the
+ * parameters for fill(), stroke(), background(), and color() are defined by
+ * values between 0 and 255 using the RGB color model. This is equivalent to
+ * setting colorMode(RGB, 255). Setting colorMode(HSB) lets you use the HSB
+ * system instead. By default, this is colorMode(HSB, 360, 100, 100, 1). You
+ * can also use HSL.
+ * <br><br>
+ * Note: existing color objects remember the mode that they were created in,
+ * so you can change modes as you like without affecting their appearance.
  *
  * @method colorMode
- * @param {Number|Constant} mode either RGB or HSB, corresponding to
- *                               Red/Green/Blue and Hue/Saturation/Brightness
- * @param {Number|Constant} max1 range for the red or hue depending on the
- *                               current color mode, or range for all values
- * @param {Number|Constant} max2 range for the green or saturation depending
- *                               on the current color mode
- * @param {Number|Constant} max3 range for the blue or brightness depending
- *                               on the current color mode
- * @param {Number|Constant} maxA range for the alpha
+ * @param {Constant} mode   either RGB or HSB, corresponding to
+ *                          Red/Green/Blue and Hue/Saturation/Brightness
+ *                          (or Lightness)
+ * @param {Number} [max1] range for the red or hue depending on the
+ *                              current color mode, or range for all values
+ * @param {Number} [max2] range for the green or saturation depending
+ *                              on the current color mode
+ * @param {Number} [max3] range for the blue or brightness/lighntess
+ *                              depending on the current color mode
+ * @param {Number} [maxA] range for the alpha
  * @example
  * <div>
  * <code>
@@ -195,29 +243,65 @@ p5.prototype.clear = function() {
  * }
  * </code>
  * </div>
+ *
+ * <div>
+ * <code>
+ * colorMode(RGB, 255);
+ * var c = color(127, 255, 0);
+ *
+ * colorMode(RGB, 1);
+ * var myColor = c._getRed();
+ * text(myColor, 10, 10, 80, 80);
+ * </code>
+ * </div>
+ *
+ * <div>
+ * <code>
+ * noFill();
+ * colorMode(RGB, 255, 255, 255, 1);
+ * background(255);
+ *
+ * strokeWeight(4);
+ * stroke(255, 0 , 10, 0.3);
+ * ellipse(40, 40, 50, 50);
+ * ellipse(50, 50, 40, 40);
+ * </code>
+ * </div>
+ *
+ * @alt
+ *Green to red gradient from bottom L to top R. shading originates from top left.
+ *Rainbow gradient from left to right. Brightness increasing to white at top.
+ *unknown image.
+ *50x50 ellipse at middle L & 40x40 ellipse at center. Transluscent pink outlines.
+ *
  */
 p5.prototype.colorMode = function() {
   if (arguments[0] === constants.RGB ||
       arguments[0] === constants.HSB ||
       arguments[0] === constants.HSL) {
-    this._colorMode = arguments[0];
 
-    var maxArr = this._colorMaxes[this._colorMode];
+    // Set color mode.
+    this._renderer._colorMode = arguments[0];
 
+    // Set color maxes.
+    var maxes = this._renderer._colorMaxes[this._renderer._colorMode];
     if (arguments.length === 2) {
-      maxArr[0] = arguments[1];
-      maxArr[1] = arguments[1];
-      maxArr[2] = arguments[1];
-      maxArr[3] = arguments[1];
-    } else if (arguments.length > 2) {
-      maxArr[0] = arguments[1];
-      maxArr[1] = arguments[2];
-      maxArr[2] = arguments[3];
-    }
-    if (arguments.length === 5) {
-      maxArr[3] = arguments[4];
+      maxes[0] = arguments[1];  // Red
+      maxes[1] = arguments[1];  // Green
+      maxes[2] = arguments[1];  // Blue
+      maxes[3] = arguments[1];  // Alpha
+    } else if (arguments.length === 4) {
+      maxes[0] = arguments[1];  // Red
+      maxes[1] = arguments[2];  // Green
+      maxes[2] = arguments[3];  // Blue
+    } else if (arguments.length === 5) {
+      maxes[0] = arguments[1];  // Red
+      maxes[1] = arguments[2];  // Green
+      maxes[2] = arguments[3];  // Blue
+      maxes[3] = arguments[4];  // Alpha
     }
   }
+
   return this;
 };
 
@@ -226,9 +310,11 @@ p5.prototype.colorMode = function() {
  * fill(204, 102, 0), all subsequent shapes will be filled with orange. This
  * color is either specified in terms of the RGB or HSB color depending on
  * the current colorMode(). (The default color space is RGB, with each value
- * in the range from 0 to 255.) If a single string argument is provided, RGB,
- * RGBA and Hex CSS color strings and all named color strings are supported.
- * A p5 Color object can also be provided to set the fill color.
+ * in the range from 0 to 255).
+ * <br><br>
+ * If a single string argument is provided, RGB, RGBA and Hex CSS color strings
+ * and all named color strings are supported. A p5 Color object can also be
+ * provided to set the fill color.
  *
  * @method fill
  * @param {Number|Array|String|p5.Color} v1   gray value, red or hue value
@@ -332,11 +418,24 @@ p5.prototype.colorMode = function() {
  * rect(20, 20, 60, 60);
  * </code>
  * </div>
+ * @alt
+ * 60x60 dark charcoal grey rect with black outline in center of canvas.
+ * 60x60 yellow rect with black outline in center of canvas.
+ * 60x60 royal blue rect with black outline in center of canvas.
+ * 60x60 red rect with black outline in center of canvas.
+ * 60x60 pink rect with black outline in center of canvas.
+ * 60x60 black rect with black outline in center of canvas.
+ * 60x60 light green rect with black outline in center of canvas.
+ * 60x60 soft green rect with black outline in center of canvas.
+ * 60x60 red rect with black outline in center of canvas.
+ * 60x60 dark fushcia rect with black outline in center of canvas.
+ * 60x60 blue rect with black outline in center of canvas.
  */
+
 p5.prototype.fill = function() {
-  this._setProperty('_fillSet', true);
-  this._setProperty('_doFill', true);
-  this._graphics.fill.apply(this._graphics, arguments);
+  this._renderer._setProperty('_fillSet', true);
+  this._renderer._setProperty('_doFill', true);
+  this._renderer.fill.apply(this._renderer, arguments);
   return this;
 };
 
@@ -353,9 +452,11 @@ p5.prototype.fill = function() {
  * rect(20, 20, 60, 60);
  * </code>
  * </div>
+ * @alt
+ * white rect top middle and noFill rect center. Both 60x60 with black outlines.
  */
 p5.prototype.noFill = function() {
-  this._setProperty('_doFill', false);
+  this._renderer._setProperty('_doFill', false);
   return this;
 };
 
@@ -371,9 +472,15 @@ p5.prototype.noFill = function() {
  * rect(20, 20, 60, 60);
  * </code>
  * </div>
+ *
+ *
+ * @alt
+ *60x60 white rect at center. no outline.
+ *
  */
+
 p5.prototype.noStroke = function() {
-  this._setProperty('_doStroke', false);
+  this._renderer._setProperty('_doStroke', false);
   return this;
 };
 
@@ -381,9 +488,11 @@ p5.prototype.noStroke = function() {
  * Sets the color used to draw lines and borders around shapes. This color
  * is either specified in terms of the RGB or HSB color depending on the
  * current colorMode() (the default color space is RGB, with each value in
- * the range from 0 to 255). If a single string argument is provided, RGB,
- * RGBA and Hex CSS color strings and all named color strings are supported.
- * A p5 Color object can also be provided to set the stroke color.
+ * the range from 0 to 255).
+ * <br><br>
+ * If a single string argument is provided, RGB, RGBA and Hex CSS color
+ * strings and all named color strings are supported. A p5 Color object
+ * can also be provided to set the stroke color.
  *
  * @method stroke
  * @param {Number|Array|String|p5.Color} v1   gray value, red or hue value
@@ -498,14 +607,26 @@ p5.prototype.noStroke = function() {
  * rect(20, 20, 60, 60);
  * </code>
  * </div>
+ *
+ * @alt
+ * 60x60 white rect at center. Dark charcoal grey outline.
+ * 60x60 white rect at center. Yellow outline.
+ * 60x60 white rect at center. Royal blue outline.
+ * 60x60 white rect at center. Red outline.
+ * 60x60 white rect at center. Pink outline.
+ * 60x60 white rect at center. Black outline.
+ * 60x60 white rect at center. Bright green outline.
+ * 60x60 white rect at center. Soft green outline.
+ * 60x60 white rect at center. Red outline.
+ * 60x60 white rect at center. Dark fushcia outline.
+ * 60x60 white rect at center. Blue outline.
  */
+
 p5.prototype.stroke = function() {
-  this._setProperty('_strokeSet', true);
-  this._setProperty('_doStroke', true);
-  this._graphics.stroke.apply(this._graphics, arguments);
+  this._renderer._setProperty('_strokeSet', true);
+  this._renderer._setProperty('_doStroke', true);
+  this._renderer.stroke.apply(this._renderer, arguments);
   return this;
 };
-
-
 
 module.exports = p5;

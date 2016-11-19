@@ -62,6 +62,10 @@ var lcg = (function() {
  * }
  * </code>
  * </div>
+ *
+ * @alt
+ * many vertical lines drawn in white, black or grey.
+ *
  */
 p5.prototype.randomSeed = function(seed) {
   lcg.setSeed(seed);
@@ -69,18 +73,26 @@ p5.prototype.randomSeed = function(seed) {
 };
 
 /**
- * Return a random number.
+ * Return a random floating-point number.
  *
  * Takes either 0, 1 or 2 arguments.
- * If no argument is given, returns a random number between 0 and 1.
- * If one argument is given, returns a random number between 0 and the number.
- * If two arguments are given, returns a random number between them,
- * inclusive.
+ *
+ * If no argument is given, returns a random number from 0
+ * up to (but not including) 1.
+ *
+ * If one argument is given and it is a number, returns a random number from 0
+ * up to (but not including) the number.
+ *
+ * If one argument is given and it is an array, returns a random element from
+ * that array.
+ *
+ * If two arguments are given, returns a random number from the
+ * first argument up to (but not including) the second argument.
  *
  * @method random
- * @param  {Number} min   the lower bound
- * @param  {Number} max   the upper bound
- * @return {Number} the random number
+ * @param  {Number} [min]   the lower bound (inclusive)
+ * @param  {Number} [max]   the upper bound (exclusive)
+ * @return {Number|mixed} the random number or a random element in choices
  * @example
  * <div>
  * <code>
@@ -101,12 +113,24 @@ p5.prototype.randomSeed = function(seed) {
  * </div>
  * <div>
  * <code>
- * // Get a random element from an array
+ * // Get a random element from an array using the random(Array) syntax
  * var words = [ "apple", "bear", "cat", "dog" ];
- * var index = floor(random(words.length));  // Convert to integer
- * text(words[index],10,50);  // Displays one of the four words
+ * var word = random(words);  // select random word
+ * text(word,10,50);  // draw the word
  * </code>
  * </div>
+ *
+ * @alt
+ * 100 horizontal lines from center canvas to right. size+fill change each time
+ * 100 horizontal lines from center of canvas. height & side change each render
+ * word displayed at random. Either apple, bear, cat, or dog
+ *
+ */
+/**
+ * @method random
+ * @param  {Array} choices   the array to choose from
+ * @return {mixed} the random element from the array
+ * @example
  */
 p5.prototype.random = function (min, max) {
 
@@ -117,12 +141,15 @@ p5.prototype.random = function (min, max) {
   } else {
     rand = Math.random();
   }
-
-  if (arguments.length === 0) {
+  if (typeof min === 'undefined') {
     return rand;
   } else
-  if (arguments.length === 1) {
-    return rand * min;
+  if (typeof max === 'undefined') {
+    if (min instanceof Array) {
+      return min[Math.floor(rand * min.length)];
+    } else {
+      return rand * min;
+    }
   } else {
     if (min > max) {
       var tmp = min;
@@ -139,14 +166,15 @@ p5.prototype.random = function (min, max) {
  *
  * Returns a random number fitting a Gaussian, or
  * normal, distribution. There is theoretically no minimum or maximum
- * value that <b>randomGaussian()</b> might return. Rather, there is
+ * value that randomGaussian() might return. Rather, there is
  * just a very low probability that values far from the mean will be
  * returned; and a higher probability that numbers near the mean will
  * be returned.
- * Takes either 0, 1 or 2 arguments.
- * If no args, returns a mean of 0 and standard deviation of 1
- * If one arg, that arg is the mean (standard deviation is 1)
- * If two args, first is mean, second is standard deviation
+ * <br><br>
+ * Takes either 0, 1 or 2 arguments.<br>
+ * If no args, returns a mean of 0 and standard deviation of 1.<br>
+ * If one arg, that arg is the mean (standard deviation is 1).<br>
+ * If two args, first is mean, second is standard deviation.
  *
  * @method randomGaussian
  * @param  {Number} mean  the mean
@@ -185,6 +213,9 @@ p5.prototype.random = function (min, max) {
  *}
  * </code>
  * </div>
+ * @alt
+ * 100 horizontal lines from center of canvas. height & side change each render
+ * black lines radiate from center of canvas. size determined each render
  */
 var y2;
 var previous = false;
